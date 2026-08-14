@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Build Outputs
+dist/
+build/
+
+# Hardware / PlatformIO
+.pio/
+.vscode/
+*.bin
+*.hex
+
+# OS files
+.DS_Store
+Thumbs.db
