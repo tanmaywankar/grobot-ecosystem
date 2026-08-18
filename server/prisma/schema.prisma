@@ -28,5 +28,22 @@ model Device {
   status          String   @default("OFFLINE")
   lastSeen        DateTime @default(now())
   createdAt       DateTime @default(now())
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  telemetries TelemetryLog[]
+}
+
+model TelemetryLog {
+  id           String   @id @default(cuid())
+  deviceId     String
+  temperature  Float
+  humidity     Float
+  light        Float
+  soilMoisture Float
+  rawAdc       Int?
+  createdAt    DateTime @default(now())
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, createdAt])
 }
