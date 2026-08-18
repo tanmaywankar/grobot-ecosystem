@@ -10,6 +10,10 @@ const HARDWARE_API_KEY = process.env.HARDWARE_API_KEY;
 app.use(cors());
 app.use(express.json());
 
+//in memory states cuz otherwise the esp32 would send the sensor data to database 24x7 (i can't afford paid db (T-T) )
+let telemetryBuffer = [];
+let lastDeviceState = null;
+
 const TelemetrySchema = z.object({
   temperature: z.number(),
   humidity: z.number(),
@@ -46,10 +50,15 @@ app.post("/api/telemetry", (req, res) => {
     receivedAt: new Date().toISOString(),
   };
 
+  lastDeviceState = parsedData;
+
+  telemetryBuffer.push(parsedData);
+console.log(`[RAM Buffer] Stored reading #${telemetryBuffer.length}. Current buffer size: ${telemetryBuffer.length}`);
   return res.status(200).json({
     success: true,
-    message: "validation successfull",
-    data: parsedData,
+    message: "telementry stored in buffer",
+    bufferedCount: telemetryBuffer.length,
+    latestReading: lastDeviceState,
   });
 });
 
