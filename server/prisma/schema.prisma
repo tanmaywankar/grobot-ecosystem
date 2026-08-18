@@ -6,8 +6,10 @@ datasource db {
   provider = "postgresql"
 }
 
-model TestLog {
-  id        Int      @id @default(autoincrement())
-  val       Float
+model User {
+  id String @id @default(uuid())
+  email String @unique
+  passwordHash String
+  name String
   createdAt DateTime @default(now())
 }

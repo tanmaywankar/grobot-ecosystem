@@ -9,20 +9,27 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-async function run() {
-  // 1. Insert one test value
-  const item = await prisma.testLog.create({
-    data: { val: 26.5 },
-  });
-  console.log("✅ Saved to Neon:", item);
+async function main() {
+  console.log("🔄 Testing User model with Neon...");
 
-  // 2. Fetch it back
-  const allLogs = await prisma.testLog.findMany();
-  console.log("📥 Fetched all values from Neon:", allLogs);
+  // 2. Insert a test user
+  const newUser = await prisma.user.create({
+    data: {
+      email: `test_${Date.now()}@example.com`,
+      name: "Tanmay",
+      passwordHash: "fake_hashed_bcrypt_secret_123",
+    },
+  });
+
+  console.log("✅ User created successfully in Neon:", newUser);
+
+  // 3. Query all users from Neon
+  const allUsers = await prisma.user.findMany();
+  console.log("📥 All users in database:", allUsers);
 }
 
-run()
-  .catch(console.error)
+main()
+  .catch((e) => console.error("❌ Error:", e))
   .finally(async () => {
     await prisma.$disconnect();
     await pool.end();
