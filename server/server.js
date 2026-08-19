@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import "dotenv/config";
 import { z } from "zod";
+import { prisma } from "./db.js";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -22,6 +23,57 @@ const TelemetrySchema = z.object({
   rawAdc: z.number().int().optional(),
 });
 
+async function sendBufferToDB() {
+  if (telemetryBuffer.length === 0) {
+    console.log("nothing in buffer");
+    return;
+  }
+
+  const dataToWrite = [...telemetryBuffer];
+  telemetryBuffer = [];
+
+  try {
+    const device = prisma.device.findUnique({
+      where: { apiKey: HARDWARE_API_KEY },
+    });
+
+    if (!device) {
+      telemetryBuffer = [...dataToWrite, ...telemetryBuffer];
+      console.log("the device with given key does not exist");
+      return;
+    }
+
+    const records = dataToWrite.map((data) => ({
+      deviceId: device.id,
+      temperature: data.temperature,
+      humidity: data.humidity,
+      soilMoisture: data.soilMoisture,
+      rawAdc: data.rawAdc,
+      light: data.light,
+      createdAt: new Date(data.receivedAt),
+    }));
+
+    await prisma.telemetryLog.createMany({
+      data: records,
+    });
+
+    await prisma.device.update({
+      where: { id: device.id },
+      data: {
+        status: ONLINE,
+        lastSeen: new Date(),
+      },
+    });
+
+    console.log("successfully saved the records");
+  } catch (err) {
+    console.error("error pushing to database", err);
+    telemetryBuffer = [...dataToWrite, ...telemetryBuffer];
+  }
+}
+
+const sendInterval = 10 * 60 * 1000;
+setInterval(sendBufferToDB, sendInterval);
 app.post("/api/telemetry", (req, res) => {
   const clientKey = req.headers["grobot-key"];
 
@@ -53,7 +105,9 @@ app.post("/api/telemetry", (req, res) => {
   lastDeviceState = parsedData;
 
   telemetryBuffer.push(parsedData);
-console.log(`[RAM Buffer] Stored reading #${telemetryBuffer.length}. Current buffer size: ${telemetryBuffer.length}`);
+  console.log(
+    `[RAM Buffer] Stored reading #${telemetryBuffer.length}. Current buffer size: ${telemetryBuffer.length}`,
+  );
   return res.status(200).json({
     success: true,
     message: "telementry stored in buffer",
@@ -61,6 +115,8 @@ console.log(`[RAM Buffer] Stored reading #${telemetryBuffer.length}. Current buf
     latestReading: lastDeviceState,
   });
 });
+
+app.post();
 
 app.listen(PORT, () => {
   console.log(`listening on port: ${PORT}`);
