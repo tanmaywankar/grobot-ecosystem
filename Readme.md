@@ -19,9 +19,9 @@ Grobot is a work-in-progress, fully open source, interactive plant monitoring ro
 - [x] Set up Express server & security key check
 - [x] Validate sensor readings (Zod rules)
 - [x] Temporary memory buffer (RAM storage)
-- [ ] Connect database client (Prisma/Neon)
-- [ ] Auto-save buffered sensor logs to database
-- [ ] Endpoints to view live state & sensor history
+- [x] Connect database client (Prisma/Neon)
+- [x] Auto-save buffered sensor logs to database
+- [x] Endpoints to view live state & sensor history
 
 </details>
 
