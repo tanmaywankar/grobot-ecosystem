@@ -6,4 +6,4 @@ node_modules
 .windsurf
 /generated/prisma
 test.js
-server.js
+serverMain.js
