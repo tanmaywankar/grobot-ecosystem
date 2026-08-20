@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { success, z } from "zod";
+import { z } from "zod";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { prisma } from "../db.js";
@@ -36,19 +36,33 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    return res.status(200).json({
-        success: true,
-        message: "email is available"
+    const saltRound = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRound);
+
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        passwordHash: hashedPassword,
+        name,
+      },
     });
 
+    return res.status(201).json({
+      success: true,
+      message: "user created successfully",
+      user: {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+      },
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({
-        success: false,
-        error: "database query failed",
+      success: false,
+      error: "database query failed",
     });
   }
-
 });
 
 export default router;
