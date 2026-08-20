@@ -33,7 +33,7 @@ async function sendBufferToDB() {
   telemetryBuffer = [];
 
   try {
-    const device = prisma.device.findUnique({
+    const device = await prisma.device.findUnique({
       where: { apiKey: HARDWARE_API_KEY },
     });
 
@@ -60,7 +60,7 @@ async function sendBufferToDB() {
     await prisma.device.update({
       where: { id: device.id },
       data: {
-        status: ONLINE,
+        status: "ONLINE",
         lastSeen: new Date(),
       },
     });
@@ -116,8 +116,18 @@ app.post("/api/telemetry", (req, res) => {
   });
 });
 
-app.post();
-
+app.post("/api/telemetry/flush", async (req, res) => {
+  await sendBufferToDB();
+  return res.status(200).json({
+    success: true,
+    remainingBuffer: telemetryBuffer.length,
+  });
+});
+process.on("SIGINT", async () => {
+  console.log("Server shutting down... Flushing buffer to database.");
+  await sendBufferToDB();
+  process.exit(0);
+});
 app.listen(PORT, () => {
   console.log(`listening on port: ${PORT}`);
 });
