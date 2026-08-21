@@ -29,8 +29,8 @@ Grobot is a work-in-progress, fully open source, interactive plant monitoring ro
 <summary><b>2. Auth & User Management</b></summary>
 
 - [x] User signup & secure password encryption
-- [ ] User login & session tokens (JWT)
-- [ ] Protect dashboard routes for logged-in users
+- [x] User login & session tokens (JWT)
+- [x] Protect dashboard routes for logged-in users
 - [ ] Add new Grobot device & generate its unique API key
 - [ ] View & manage linked devices
 

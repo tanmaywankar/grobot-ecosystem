@@ -3,6 +3,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { prisma } from "../db.js";
+import { authGuard } from "../middleware/authGuard.js";
 
 const router = Router();
 
@@ -105,7 +106,7 @@ router.post("/login", async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        error: "invalid password",
+        error: "invalid email or password",
       });
     }
     const token = jwt.sign(
@@ -134,6 +135,14 @@ router.post("/login", async (req, res) => {
       error: "failed to login",
     });
   }
+});
+
+router.get("/me", authGuard, (req, res)=>{
+  return res.status(200).json({
+    success: true,
+    message: "You accessed a protected route!",
+    currentUser: req.user,
+  });
 });
 
 export default router;
