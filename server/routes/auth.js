@@ -12,6 +12,11 @@ const registerSchema = z.object({
   name: z.string(),
 });
 
+const loginSchema= z.object({
+  email: z.email(),
+  password: z.string().min(1,"password is required"),
+});
+
 router.post("/register", async (req, res) => {
   const validation = registerSchema.safeParse(req.body);
 
@@ -47,9 +52,18 @@ router.post("/register", async (req, res) => {
       },
     });
 
+    
+
+
+    const token = jwt.sign({userId: newUser.id, email: newUser.email,},
+      process.env.JWT_SECRET,
+      {expiresIn: "7d"},
+    );
+
     return res.status(201).json({
       success: true,
       message: "user created successfully",
+      token,
       user: {
         id: newUser.id,
         name: newUser.name,
