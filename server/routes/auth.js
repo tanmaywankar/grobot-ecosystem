@@ -12,9 +12,9 @@ const registerSchema = z.object({
   name: z.string(),
 });
 
-const loginSchema= z.object({
+const loginSchema = z.object({
   email: z.email(),
-  password: z.string().min(1,"password is required"),
+  password: z.string().min(1, "password is required"),
 });
 
 router.post("/register", async (req, res) => {
@@ -51,13 +51,10 @@ router.post("/register", async (req, res) => {
         name,
       },
     });
-
-    
-
-
-    const token = jwt.sign({userId: newUser.id, email: newUser.email,},
+    const token = jwt.sign(
+      { userId: newUser.id, email: newUser.email },
       process.env.JWT_SECRET,
-      {expiresIn: "7d"},
+      { expiresIn: "7d" },
     );
 
     return res.status(201).json({
@@ -75,6 +72,66 @@ router.post("/register", async (req, res) => {
     return res.status(500).json({
       success: false,
       error: "database query failed",
+    });
+  }
+});
+
+router.post("/login", async (req, res) => {
+  const validation = loginSchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({
+      success: false,
+      error: "missing fields",
+      issue: validation.error.issues,
+    });
+  }
+
+  const { email, password } = validation.data;
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: "invalid email or password",
+      });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password,user.passwordHash);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        error: "invalid password",
+      });
+    }
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" },
+    );
+
+    
+  return res.status(200).json({
+    user: {id: user.id,
+      email: user.email,
+      name: user.name,
+    },
+    token,
+    
+  });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      status: false,
+      error: "failed to login",
     });
   }
 });
