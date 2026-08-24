@@ -11,6 +11,19 @@ const DeviceSchema = z.object({
   plantType: z.string().optional(),
 });
 
+const updateDeviceSchema = z
+  .object({
+    name: z
+      .string()
+      .min(2, "Device name must be minimum 2 characters")
+      .optional(),
+    plantType: z.string().optional(),
+  })
+  .refine((data) => data.name !== undefined || data.plantType !== undefined, {
+    message:
+      "At least one field (name or plantType) must be provided to update",
+  });
+
 router.post("/", authGuard, async (req, res) => {
   const validation = DeviceSchema.safeParse(req.body);
   if (!validation.success) {
@@ -66,6 +79,52 @@ router.get("/", authGuard, async (req, res) => {
     return res.status(500).json({
       success: false,
       error: "failed to fetch devices",
+    });
+  }
+});
+
+router.patch("/:id", authGuard, async (req, res) => {
+  const { id } = req.params;
+
+  const validation = updateDeviceSchema.safeParse(req.body);
+  if (!validation.success) {
+    return res.status(400).json({
+      success: false,
+      error: "invalid update data",
+      issues: validation.error.issues,
+    });
+  }
+
+  try {
+    const existingDevice = await prisma.device.findFirst({
+      where: {
+        id: id,
+        userId: req.user.userId,
+      },
+    });
+
+    if (!existingDevice) {
+      return res.status(404).json({
+        success: false,
+        error: "device not found or not authorized",
+      });
+    }
+
+    const updatedDevice = await prisma.device.update({
+      where: { id: id },
+      data: validation.data,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "device updated successfully",
+      device: updatedDevice,
+    });
+  } catch (err) {
+    console.error("update device error", err);
+    return res.status(500).json({
+      success: false,
+      error: "failed to update device",
     });
   }
 });
