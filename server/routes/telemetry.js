@@ -79,9 +79,8 @@ router.post("/", async (req, res) => {
 
     const { temperature, humidity, light, soilMoisture, rawAdc } =
       validation.data;
-
-    // Push reading with the matched device.id into RAM buffer
-    telemetryBuffer.push({
+    
+    const newReading = {
       deviceId: device.id,
       temperature,
       humidity,
@@ -89,7 +88,15 @@ router.post("/", async (req, res) => {
       soilMoisture,
       rawAdc: rawAdc ?? null,
       createdAt: new Date(),
-    });
+    };
+
+    // Push reading with the matched device.id into RAM buffer
+    telemetryBuffer.push();
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(`device:${device.id}`).emit("telemetry:new", newReading);
+    }
 
     return res.status(200).json({
       success: true,
