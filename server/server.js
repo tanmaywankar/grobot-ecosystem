@@ -6,6 +6,7 @@ import deviceRoutes from "./routes/device.js";
 import telemetryRouter, { sendBufferToDB } from "./routes/telemetry.js";
 import http from "http";
 import { Server } from "socket.io";
+import { prisma } from "./db.js";
 
 const app = express();
 
@@ -14,7 +15,6 @@ const io = new Server(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"],
-
   },
 });
 
@@ -29,17 +29,68 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/devices", deviceRoutes);
 app.use("/api/v1/telemetry", telemetryRouter);
 
-io.on("connection", (socket) =>{
+const activeSockets = new Map();
+
+io.on("connection", (socket) => {
   console.log(`[WebSocket] Client connected: ${socket.id}`);
 
-  socket.on("join:device", (deviceId)=>{
+  socket.on("join:device", async (deviceId) => {
     socket.join(`device:${deviceId}`);
+    activeSockets.set(socket.id, deviceId);
     console.log(`[WebSocket] Client joined room: device:${deviceId}`);
+    try {
+      await prisma.device.update({
+        where: { id: deviceId },
+        data: {
+          status: "ONLINE",
+          lastSeen: new Date(),
+        },
+      });
+    } catch (err) {
+      console.error(
+        `[DB Error] Setting device ${deviceId} ONLINE:`,
+        err.message,
+      );
+    }
+
+    io.to(`device:${deviceId}`).emit("device:status", {
+      deviceId,
+      status: "ONLINE",
+      timestamp: new Date().toISOString(),
+    });
   });
 
-    socket.on("disconnect", ()=>{
+  socket.on("disconnect", async () => {
+    const deviceId = activeSockets.get(socket.id);
+
+    if (deviceId) {
+      console.log(`[WebSocket] Device ${deviceId} disconnected`);
+
+      try {
+        await prisma.device.update({
+          where: { id: deviceId },
+          data: {
+            status: "OFFLINE",
+            lastSeen: new Date(),
+          },
+        });
+      } catch (err) {
+        console.error(
+          `[DB Error] Setting device ${deviceId} OFFLINE:`,
+          err.message,
+        );
+      }
+      io.to(`device:${deviceId}`).emit("device:status", {
+        deviceId,
+        status: "OFFLINE",
+        timestamp: new Date().toISOString(),
+      });
+
+      activeSockets.delete(socket.id);
+    } else {
       console.log(`[WebSocket] Client disconnected: ${socket.id}`);
-    });
+    }
+  });
 });
 
 process.on("SIGINT", async () => {

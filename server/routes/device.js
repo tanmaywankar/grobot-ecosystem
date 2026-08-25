@@ -158,4 +158,49 @@ router.delete("/:id", authGuard, async (req, res) => {
   }
 });
 
+router.post("/:deviceId/command", authGuard, async (req, res) => {
+  const {deviceId} = req.params;
+  const { action, payload } = req.body;
+
+  if (!action) {
+    return res.status(400).json({
+      success: false,
+      error: "Command action is required",
+    });
+  }
+
+  try {
+    const device = await prisma.device.findFirst({
+      where: { id: deviceId, userId: req.user.userId },
+    });
+
+    if (!device) {
+      return res.status(404).json({
+        success: false,
+        error: "Device not found or not authorized",
+      });
+    }
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(`device:${device.id}`).emit("command:execute", {
+        action,
+        payload: payload || {},
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Command '${action}' dispatched`,
+    });
+  } catch (err) {
+    console.error("Command dispatch error:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Failed to dispatch command",
+    });
+  }
+});
+
 export default router;
