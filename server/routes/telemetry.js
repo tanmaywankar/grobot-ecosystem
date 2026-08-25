@@ -91,7 +91,7 @@ router.post("/", async (req, res) => {
     };
 
     // Push reading with the matched device.id into RAM buffer
-    telemetryBuffer.push();
+    telemetryBuffer.push(newReading);
 
     const io = req.app.get("io");
     if (io) {

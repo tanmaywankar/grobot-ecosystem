@@ -40,8 +40,8 @@ Grobot is a work-in-progress, fully open source, interactive plant monitoring ro
 <details>
 <summary><b>3. Real-time Dispatch (Live Sync)</b></summary>
 
-- [ ] WebSockets setup for instant communication
-- [ ] Stream live sensor updates to the dashboard
+- [x] WebSockets setup for instant communication
+- [x] Stream live sensor updates to the dashboard
 - [ ] Send remote commands to Grobot (water pump, face animations)
 - [ ] Track online/offline device status
 </details>
