@@ -6,7 +6,7 @@ import { authGuard } from "../middleware/authGuard.js";
 const router = Router();
 
 // In-memory buffer
-let telemetryBuffer = [];
+export const telemetryBuffer = [];
 const sendInterval = 10 * 60 * 1000; // 10 minutes
 
 const telemetrySchema = z.object({
@@ -24,8 +24,7 @@ export async function sendBufferToDB() {
     return;
   }
 
-  const dataToWrite = [...telemetryBuffer];
-  telemetryBuffer = [];
+  const dataToWrite = telemetryBuffer.splice(0, telemetryBuffer.length);
 
   try {
     await prisma.telemetryLog.createMany({
@@ -36,7 +35,7 @@ export async function sendBufferToDB() {
   } catch (err) {
     console.error("error pushing to database", err);
     // Restore unsaved data back to buffer if database write fails
-    telemetryBuffer = [...dataToWrite, ...telemetryBuffer];
+    telemetryBuffer.unshift(...dataToWrite);
   }
 }
 

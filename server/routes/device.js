@@ -181,14 +181,29 @@ router.post("/:deviceId/command", authGuard, async (req, res) => {
       });
     }
 
-    const io = req.app.get("io");
-    if (io) {
-      io.to(`device:${device.id}`).emit("command:execute", {
-        action,
-        payload: payload || {},
-        timestamp: new Date().toISOString(),
-      });
-    }
+const commandPacket = {
+  action,
+  payload: payload || {},
+  timestamp: new Date().toISOString(),
+};
+
+const io = req.app.get("io");
+if (io) {
+  io.to(`device:${device.id}`).emit("command:execute", commandPacket);
+}
+
+const aedes = req.app.get("aedes");
+if (aedes) {
+  aedes.publish({
+    topic: `grobot/${device.id}/command`,
+    payload: JSON.stringify(commandPacket),
+    qos: 0,
+    retain: false,
+  },
+    (err) => {
+      if (err) console.error("[MQTT Publish Error]:", err.message);
+    });
+}
 
     return res.status(200).json({
       success: true,
