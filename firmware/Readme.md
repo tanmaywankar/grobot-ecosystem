@@ -20,7 +20,7 @@ Configure `TFT_eSPI` by referencing the pin assignments in your local `User_Setu
 * Ensure SPI lines match hardware: `MOSI: 23`, `SCLK: 18`, `CS: 15`, `DC: 2`, `RST: 4`
 
 ### 3. Flashing the Board
-1. Connect your ESP32 board via USB-C.
+1. Connect your ESP32 board via USB.
 2. Select **ESP32 Dev Module** as the target board.
 3. Open `Grobot_Firmware.ino` (or PlatformIO main file).
 4. Set your Wi-Fi credentials or use the onboard captive portal.

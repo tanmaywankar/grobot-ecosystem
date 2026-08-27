@@ -11,7 +11,7 @@ Grobot is a work-in-progress, fully open source, interactive plant monitoring ro
 
 ## Development Roadmap
 > Current focus is on esp32 see the firmware folder for list of tasks
-### Tasks Remaining/completed
+### Backend tasks Remaining/completed
 
 <details>
 <summary><b>1. Telemetry Ingestion (Sensor Data)</b></summary>
