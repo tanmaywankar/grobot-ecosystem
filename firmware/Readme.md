@@ -32,63 +32,28 @@ Configure `TFT_eSPI` by referencing the pin assignments in your local `User_Setu
 > Current focus is on ESP32 coding.
 
 ### Tasks Remaining / In Progress
+<details open>
+<summary><b>1. Core Link: Live Eyes & Web Control (Current Focus)</b></summary>
 
-<details>
-<summary><b>1. Dual-Core Architecture & Backend Comms (Current Priority)</b></summary>
-
-- [ ] Configure FreeRTOS multi-threading (Pin WebSockets & Audio to Core 0, UI to Core 1)
-- [ ] Implement thread-safe global `SystemState` struct guarded by FreeRTOS Mutex
-- [ ] Build Socket.io client over Engine.IO v4 for real-time telemetry streaming
-- [ ] Create periodic JSON telemetry dispatch task (Soil, BME280 Temp/Hum, TEMT6000 Lux)
-- [ ] Implement incoming WebSocket command listener for live cloud mood overrides
-- [ ] Add non-blocking Wi-Fi auto-reconnect logic and Captive Portal provisioning fallback
+- [ ] **Dual-Core Setup & Safe State:** Run WebSockets on Core 0 and Eyes on Core 1, sharing a single protected state so they don't crash into each other.
+- [ ] **Wi-Fi & Socket.io Connection:** Connect to local Wi-Fi (with auto-reconnect) and link to the backend over WebSockets.
+- [ ] **Two-Way Live Sync:** Send plant telemetry (temp, moisture, light) to the cloud every few seconds and let the web app change Grobot's mood live.
 
 </details>
 
 <details>
-<summary><b>2. Eye UI & Dynamic HUD Overlay</b></summary>
+<summary><b>2. Screen, Touch & Sound Polish</b></summary>
 
-- [ ] Integrate `Grobot_Animations` spring physics engine inside the Core 1 `loop()`
-- [ ] Create 1-bit monochrome/RGB565 C-array bitmap icon set (Water, Sun, Wi-Fi, Alerts)
-- [ ] Build dynamic HUD status overlay engine with canvas blending on `TFT_eSprite`
-- [ ] Implement user preference toggle for HUD visibility synced via Web/App dashboard
-- [ ] Add smart critical override logic (force-display warning badge when soil moisture < 15%)
-- [ ] Optimize SPI buffer blitting (`pushSprite`) to lock steady 60 FPS without screen tearing
+- [ ] **HUD Badges & Alerts:** Draw small icons (Wi-Fi status, low-water warning) directly on top of the eye animations.
+- [ ] **Touch Controls & Navigation:** Use touch pads to tap and switch between the main Eye face, plant sensor stats, and a clock screen.
+- [ ] **Cute Sound Effects:** Play procedural audio chirps and beeps on a buzzer whenever moods change or buttons get tapped.
 
 </details>
 
 <details>
-<summary><b>3. Sound Engine & Non-Blocking Audio Subsystem</b></summary>
+<summary><b>3. Extra Apps & Final Touches</b></summary>
 
-- [ ] Set up FreeRTOS inter-core `soundQueue` for zero-latency audio dispatch
-- [ ] Build Core 0 tone worker task using ESP32 hardware PWM (`ledcWriteTone`)
-- [ ] Create procedural Cozmo-style pitch sweep functions (Happy chirp, Sad whine, Alert double-blip)
-- [ ] Implement non-blocking audio trigger helper (`triggerSound(SFX_NAME)`)
-- [ ] Design seamless event integration between emotion state changes and audio sweeps
-- [ ] Prepare I2S audio driver stubs for future INMP441 mic and MAX98357A amp expansion
-
-</details>
-
-<details>
-<summary><b>4. Touch Input & Lag-Free App Switcher</b></summary>
-
-- [ ] Configure built-in capacitive touch pins (Left T4, Right T5, Top T7)
-- [ ] Implement software debounce and edge-detection to eliminate ghost/repeated touches
-- [ ] Build finite state machine (FSM) for screen navigation (`SCREEN_EMOTIONS`, `SCREEN_STATS`, `SCREEN_CLOCK`, `SCREEN_SETTINGS`)
-- [ ] Implement single-frame screen context switching (clean display clearing without physics stalls)
-- [ ] Map Top Touchpad to toggle between Home (Emotions) and the last active app widget
-- [ ] Map Left and Right Touchpads to cycle forward and backward through system screens
-
-</details>
-
-<details>
-<summary><b>5. Onboard System Apps (Stats, Clock, Settings)</b></summary>
-
-- [ ] Build `SCREEN_STATS` plant vitals dashboard card (Soil %, Temp, Humidity, Light Lux)
-- [ ] Implement NTP network time synchronization helper for local timekeeping
-- [ ] Build `SCREEN_CLOCK` application featuring large digital typography and weather status
-- [ ] Build `SCREEN_SETTINGS` diagnostics card displaying IP address, Wi-Fi SSID, and socket status
-- [ ] Implement ambient light auto-dimming routines driven by the TEMT6000 sensor
-- [ ] Add low-cost refresh intervals for static UI cards to preserve Core 1 CPU cycles
+- [ ] **Mini Dashboard Screens:** Add full-screen cards for detailed sensor numbers, an internet clock, and Wi-Fi diagnostic settings.
+- [ ] **Auto-Dimming & Captive Portal:** Dim screen brightness based on room lighting and add a pop-up Wi-Fi setup page if your home network changes.
 
 </details>
