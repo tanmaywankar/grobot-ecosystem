@@ -1,22 +1,39 @@
-/*
-  Grobot_Animations: BasicEyes Example
-  Demonstrates how to initialize Grobot eyes and cycle through emotions.
-  Created by Tanmay Wankar, 2026.
-*/
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 #include <Grobot_Animations.h>
+#include <GrobotMoods.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
 
+//Pin definitions
+#define SOIL_SENSOR       34   
+#define LIGHT_SENSOR      35   
+#define TOUCH_LEFT_PIN     13  
+#define TOUCH_RIGHT_PIN    12   
+#define SEALEVELPRESSURE_HPA (1013.25)
+
+struct SensorData {
+  float temperature = 0.0f;
+  float humidity = 0.0f;
+  float pressure = 0.0f;
+  int soilMoisture = 0;
+  int lightLevel = 0;
+  bool isLeftTouched = false;
+  bool isRightTouched = false;
+};
+
+
+Adafruit_BME280 bme;
 TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite canvas = TFT_eSprite(&tft);
 
-// Initialize GrobotEyes(eyeColor, backgroundColor)
-// 0x97E0 is some kind of Green(looked good to me), 0x0000 is Black
 GrobotEyes eyes(0x97E0, 0x0000); 
 
 uint32_t lastMoodSwitch = 0;
 uint32_t moodSwitchInterval = 5000;
-int moodIndex = 0; // using a consistent index name
+int moodIndex = 0;
+int touchValue = touchRead(13);
 
 void setup() {
   tft.init();
@@ -24,35 +41,30 @@ void setup() {
   tft.fillScreen(TFT_BLACK);
   tft.invertDisplay(1);
 
-  // Create the drawing buffer based 320*240 display. do not change it unless you know how it works.(it will scale accordingly based on display size). 
   canvas.createSprite(320, 120);
-  //sets initial emotion to be neutral
-  eyes.setEmotion(MOOD_NEUTRAL);
+
+  eyes.setEmotion(IDLE);
   
   Serial.begin(115200);
-  Serial.println("Animations Initialized");
+
+  bool status = bme.begin(0x76);
 }
 
 void loop() {
-  // Cycle moods
  moodSwitch(true);
-  // This calculates physics AND pushes the sprite to the physical screen
   eyes.renderEmotions(canvas);
-
-  // Optional: Display HUD (FPS counter)
   eyes.HUD(tft); 
 }
 
 void moodSwitch(bool toSwitch){
-  //employ failsafe mechanisms
   if(!toSwitch) return;
   if(millis() - lastMoodSwitch <= moodSwitchInterval) return;
 
-// Switch through built-in moods
-static const MoodData moods[] = {MOOD_NEUTRAL, MOOD_HAPPY, MOOD_ANGRY, MOOD_SAD, MOOD_WINK};
+static const MoodData moods[] = {HAPPY, SAD, ANGRY, HORRIFIED, SHOCKED, KAWAII, BORED, FEDUP, WTHBRO, WORRIED, SATISFIED, IDLE};
 const int numMoods = sizeof(moods)/sizeof(moods[0]);
 
 moodIndex = (moodIndex + 1) % numMoods;
+
 
 eyes.setEmotion(moods[moodIndex]);
 eyes.lookAt(random(-30, 31), random(-20, 21));
