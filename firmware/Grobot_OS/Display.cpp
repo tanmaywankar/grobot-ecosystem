@@ -2,7 +2,7 @@
 #include "GrobotSystem.h"
 #include <TFT_eSPI.h>
 #include <Grobot_Animations.h>
-#include <GrobotMoods.h>
+#include "GrobotMoods.h"
 
 static TFT_eSPI tft = TFT_eSPI();
 static TFT_eSprite canvas = TFT_eSprite(&tft);
