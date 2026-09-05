@@ -9,9 +9,9 @@
 #define TOUCH_RIGHT_PIN 12
 
 // Calibration constants
-#define SOIL_DRY_RAW 3200  // Value in dry air
-#define SOIL_WET_RAW 1450  // Value in water cup
-#define TOUCH_THRESHOLD 35 // Capacitive threshold
+#define SOIL_DRY_RAW 3200  
+#define SOIL_WET_RAW 1450
+#define TOUCH_THRESHOLD 35
 
 static Adafruit_BME280 bme;
 
@@ -31,7 +31,7 @@ void initSensors()
   Wire.begin(21, 22);
   if (!bme.begin(0x76, &Wire) && !bme.begin(0x77, &Wire))
   {
-    Serial.println("[WARN] BME280 not found, check wiring!");
+    Serial.println("[WARNING] BME280 not found, check wiring!");
   }
 }
 
@@ -43,11 +43,10 @@ void sensorTask(void *pvParameters)
 
   for (;;)
   {
-    // 1. High-frequency touch scan (every 30ms)
+
     bool left = touchRead(TOUCH_LEFT_PIN) < TOUCH_THRESHOLD;
     bool right = touchRead(TOUCH_RIGHT_PIN) < TOUCH_THRESHOLD;
 
-    // Instant touch state change print (no 1-second delay)
     if (left != prevLeft || right != prevRight)
     {
       Serial.printf("[TOUCH INSTANT] Left: %d | Right: %d\n", left, right);
@@ -94,6 +93,6 @@ void sensorTask(void *pvParameters)
           temp, hum, pres, soilPercent, rawSoil, rawLight);
     }
 
-    vTaskDelay(pdMS_TO_TICKS(30)); // Yield Core 0 CPU (~33Hz loop)
+    vTaskDelay(pdMS_TO_TICKS(30));
   }
 }
