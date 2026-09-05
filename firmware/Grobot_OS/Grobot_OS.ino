@@ -2,22 +2,24 @@
 #include "GrobotSystem.h"
 #include "Sensor.h"
 #include "Display.h"
+#include "WiFiPortal.h"
 
-// Allocate shared state memory
+// Shared data state & mutex
 SensorData data;
 SemaphoreHandle_t dataMutex;
 
 void setup() {
   Serial.begin(115200);
 
-  // 1. Thread-safe lock
   dataMutex = xSemaphoreCreateMutex();
 
-  // 2. Hardware initialization
+  // 1. Start eyes and display on Core 1
   initDisplay();
+
+  // 2. Start hardware sensors
   initSensors();
 
-  // 3. Launch background worker on Core 0
+  // 3. Core 0: High-frequency touch & BME/ADC reads
   xTaskCreatePinnedToCore(
     sensorTask,
     "SensorWorker",
@@ -27,9 +29,20 @@ void setup() {
     NULL,
     0
   );
+
+  // 4. Core 0: Wi-Fi autoconnect / Captive Portal
+  xTaskCreatePinnedToCore(
+    wifiTask,
+    "WiFiWorker",
+    8192,
+    NULL,
+    1,
+    NULL,
+    0
+  );
 }
 
 void loop() {
-  // Core 1 runs display and eye rendering
+  // Core 1 runs eye animations and patting gestures without blocking
   updateDisplay();
 }

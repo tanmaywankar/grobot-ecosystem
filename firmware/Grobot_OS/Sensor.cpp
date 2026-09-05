@@ -11,7 +11,7 @@
 // Calibration constants
 #define SOIL_DRY_RAW 3200  
 #define SOIL_WET_RAW 1450
-#define TOUCH_THRESHOLD 35
+#define TOUCH_THRESHOLD 20
 
 static Adafruit_BME280 bme;
 
