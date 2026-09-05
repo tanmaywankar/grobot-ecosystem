@@ -12,6 +12,10 @@ static uint32_t lastMoodSwitch = 0;
 static uint32_t moodSwitchInterval = 5000;
 static int moodIndex = 0;
 
+static bool isPatting = false;
+static uint32_t patReleaseTime = 0;
+static uint32_t lastPatShiftTime = 0;
+
 void initDisplay() {
   tft.init();
   tft.setRotation(1);
@@ -39,6 +43,21 @@ static void moodSwitch(bool toSwitch) {
 
   lastMoodSwitch = millis();
   moodSwitchInterval = random(5000, 8000);
+}
+
+static bool checkPatting(const SensorData &s){
+  uint32_t now = millis();
+
+  if(s.isLeftTouched || s.isRightTouched){
+    isPatting = true;
+    patReleaseTime = now + 1500;
+  }
+  else if(now > patReleaseTime){
+    isPatting = false;
+  }
+
+  
+
 }
 
 void updateDisplay() {

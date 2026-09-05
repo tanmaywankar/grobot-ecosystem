@@ -37,7 +37,9 @@ void initSensors()
 
 void sensorTask(void *pvParameters)
 {
-  uint32_t lastRead = 0;
+  uint32_t lastEnvRead = 0;
+  bool prevLeft = false;
+  bool prevRight = false;
 
   for (;;)
   {
@@ -45,10 +47,26 @@ void sensorTask(void *pvParameters)
     bool left = touchRead(TOUCH_LEFT_PIN) < TOUCH_THRESHOLD;
     bool right = touchRead(TOUCH_RIGHT_PIN) < TOUCH_THRESHOLD;
 
-    // 2. Environmental & analog scan (every 1 second)
-    if (millis() - lastRead >= 1000)
+    // Instant touch state change print (no 1-second delay)
+    if (left != prevLeft || right != prevRight)
     {
-      lastRead = millis();
+      Serial.printf("[TOUCH INSTANT] Left: %d | Right: %d\n", left, right);
+      prevLeft = left;
+      prevRight = right;
+    }
+
+    // Always update touch state to shared memory immediately
+    if (xSemaphoreTake(dataMutex, pdMS_TO_TICKS(10)) == pdTRUE)
+    {
+      data.isLeftTouched = left;
+      data.isRightTouched = right;
+      xSemaphoreGive(dataMutex);
+    }
+
+    // 2. Low-frequency environmental & analog scan (every 1 second)
+    if (millis() - lastEnvRead >= 1000)
+    {
+      lastEnvRead = millis();
 
       float temp = bme.readTemperature();
       float hum = bme.readHumidity();
@@ -60,7 +78,7 @@ void sensorTask(void *pvParameters)
       // Convert raw soil voltage to 0-100% moisture
       int soilPercent = constrain(map(rawSoil, SOIL_DRY_RAW, SOIL_WET_RAW, 0, 100), 0, 100);
 
-      // Thread-safe update
+      // Thread-safe update for environmental data
       if (xSemaphoreTake(dataMutex, pdMS_TO_TICKS(50)) == pdTRUE)
       {
         data.temperature = isnan(temp) ? data.temperature : temp;
@@ -68,26 +86,14 @@ void sensorTask(void *pvParameters)
         data.pressure = isnan(pres) ? data.pressure : pres;
         data.soilMoisture = soilPercent;
         data.light = rawLight;
-        data.isLeftTouched = left;
-        data.isRightTouched = right;
-        xSemaphoreGive(dataMutex);
-
-        Serial.printf(
-            "[Sensors] Temp: %.1fC | Hum: %.1f%% | Pres: %.1fhPa | Soil: %d%% (Raw: %d) | Light: %d | Touch: L:%d R:%d\n",
-            temp, hum, pres, soilPercent, rawSoil, rawLight, left, right);
-      }
-    }
-    else
-    {
-      // Touch update between environmental ticks
-      if (xSemaphoreTake(dataMutex, pdMS_TO_TICKS(10)) == pdTRUE)
-      {
-        data.isLeftTouched = left;
-        data.isRightTouched = right;
         xSemaphoreGive(dataMutex);
       }
+
+      Serial.printf(
+          "[Sensors] Temp: %.1fC | Hum: %.1f%% | Pres: %.1fhPa | Soil: %d%% (Raw: %d) | Light: %d\n",
+          temp, hum, pres, soilPercent, rawSoil, rawLight);
     }
 
-    vTaskDelay(pdMS_TO_TICKS(30)); // Yield Core 0 CPU
+    vTaskDelay(pdMS_TO_TICKS(30)); // Yield Core 0 CPU (~33Hz loop)
   }
 }
