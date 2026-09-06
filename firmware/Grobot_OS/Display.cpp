@@ -20,9 +20,17 @@ static int wiggleStep = 0;
 static bool isPatting = false;
 static uint32_t patEndTime = 0;
 
-static uint32_t lastMoodSwitch = 0;
-static uint32_t moodSwitchInterval = 5000;
-static int moodIndex = 0;
+
+static bool isTakenCare = true;
+static uint32_t lastCareTime = 0;
+
+static uint32_t lastGazeShift = 0;
+static uint32_t gazeInterval = 15000;
+
+static uint32_t lastNeglectCycle = 0;
+static int neglectStage = 0; 
+
+static int prevSoilMoisture = -1;
 
 
 void initDisplay() {
@@ -35,22 +43,60 @@ void initDisplay() {
   eyes.setEmotion(IDLE);
 }
 
-static void moodSwitch(bool toSwitch) {
-  if (!toSwitch) return;
-  if (millis() - lastMoodSwitch <= moodSwitchInterval) return;
+static void idleMoodSwitch(const SensorData &s) {
+  uint32_t now = millis();
 
-  static const MoodData moods[] = {
-    HAPPY,KAWAII, BORED, FEDUP, IDLE
-  };
-  const int numMoods = sizeof(moods) / sizeof(moods[0]);
+  if (prevSoilMoisture != -1 && (s.soilMoisture - prevSoilMoisture >= 10)) {
+    isTakenCare = true;
+    lastCareTime = now;
+  }
+  prevSoilMoisture = s.soilMoisture;
 
-  moodIndex = (moodIndex + 1) % numMoods;
+  if (lastCareTime == 0) lastCareTime = now;
 
-  eyes.setEmotion(moods[moodIndex]);
-  eyes.lookAt(random(-30, 31), random(-20, 21));
+  uint32_t elapsed = now - lastCareTime;
 
-  lastMoodSwitch = millis();
-  moodSwitchInterval = random(5000, 8000);
+  // Time brackets in milliseconds (10m, 30m, 60m, 90m)
+  const uint32_t TEN_MINS    = 10UL * 60UL * 1000UL;
+  const uint32_t THIRTY_MINS = 30UL * 60UL * 1000UL;
+  const uint32_t ONE_HOUR    = 60UL * 60UL * 1000UL;
+  const uint32_t NINETY_MINS = 90UL * 60UL * 1000UL;
+
+  if (elapsed < TEN_MINS) {
+    eyes.setEmotion(HAPPY);
+  } 
+  else if (elapsed < THIRTY_MINS) {
+    eyes.setEmotion(KAWAII);
+  } 
+  else if (elapsed < ONE_HOUR) {
+    eyes.setEmotion(IDLE);
+  } 
+  else {
+    isTakenCare = false;
+
+    // Cycle mood every 3 minutes (180000 ms)
+    if (now - lastNeglectCycle > 180000) {
+      lastNeglectCycle = now;
+      neglectStage = (neglectStage + 1) % 3;
+    }
+
+    if (elapsed < NINETY_MINS) {
+      // Moderate neglect: alternate IDLE and BORED
+      eyes.setEmotion((neglectStage % 2 == 0) ? IDLE : BORED);
+    } else {
+      // Heavy neglect (> 1.5h): alternate between IDLE, BORED, and FEDUP
+      if (neglectStage == 0) eyes.setEmotion(IDLE);
+      else if (neglectStage == 1) eyes.setEmotion(BORED);
+      else eyes.setEmotion(FEDUP);
+    }
+  }
+
+  // 3. Expressive lookAt shifts every 15-20s while in this mood
+  if (now - lastGazeShift > gazeInterval) {
+    lastGazeShift = now;
+    gazeInterval = random(15000, 20001); // 15 to 20 seconds
+    eyes.lookAt(random(-25, 26), random(-15, 16));
+  }
 }
 
 static bool checkPatting(const SensorData &s) {
@@ -83,11 +129,13 @@ static bool checkPatting(const SensorData &s) {
   // 4. Trigger patting animation loop on 2 or more alternating strokes
   if (patStrokeCount >= 5) {
     isPatting = true;
-    patEndTime = now + 3500; 
+    patEndTime = now + 3000; 
     patStrokeCount = 0;
     lastTouchedSide = 0;
     lastWiggleTime = 0;      
     wiggleStep = 0;
+    isTakenCare = true;
+    lastCareTime = now;
   }
 
   // 5. Active Animation Sequence
@@ -130,7 +178,7 @@ void updateDisplay() {
   }
 
   if (!checkPatting(currentData)) {
-    moodSwitch(true);
+    idleMoodSwitch(currentData);
   }
 
   eyes.renderEmotions(canvas);
