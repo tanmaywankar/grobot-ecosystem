@@ -100,6 +100,7 @@ static void handleMicroEvents(uint32_t now, uint32_t elapsed)
     microPhaseStepTime = now;
     nextMicroEventDelay = random(45000, 120001); // Every 45s to 2 mins
     microEventEndTime = now + random(8000, 18001); // Runs 8 to 18 seconds
+    eyes.lookAt(0, 0);
   }
 
   if (inMicroEvent)
@@ -119,14 +120,22 @@ static void handleMicroEvents(uint32_t now, uint32_t elapsed)
         microEventPhase = (microEventPhase + 1) % 2;
       }
       if (microEventPhase == 0)
-        eyes.setEmotion(SATISFIED, IDLE);
+        eyes.setEmotion(IDLELOAD, IDLE);
       else
-        eyes.setEmotion(IDLE, SATISFIED);
+        eyes.setEmotion(IDLE, IDLELOAD);
     }
     // Stage 2 (5-20m): Idleload on one eye + Idle on other
     else if (elapsed < 20UL * 60UL * 1000UL)
     {
-      eyes.setEmotion(IDLELOAD, IDLE);
+      if (now - microPhaseStepTime >= 2000)
+      {
+        microPhaseStepTime = now;
+        microEventPhase = (microEventPhase + 1) % 2;
+      }
+      if (microEventPhase == 0)
+        eyes.setEmotion(SATISFIED, IDLE);
+      else
+        eyes.setEmotion(IDLE, SATISFIED);
     }
     // Stage 3 (20-50m): Doubting or Unbelievable shrugs
     else if (elapsed < 50UL * 60UL * 1000UL)
@@ -137,7 +146,7 @@ static void handleMicroEvents(uint32_t now, uint32_t elapsed)
         microEventPhase = (microEventPhase + 1) % 2;
       }
       if (microEventPhase == 0)
-        eyes.setEmotion(DOUBTING, IDLE);
+        eyes.setEmotion(DOUBTING);
       else
         eyes.setEmotion(UNBELIEVABLE);
     }
@@ -253,7 +262,7 @@ static void idleMoodSwitch()
 
   // Regular LookAt Drift (Only active when awake)
   bool isAwakeInTier5 = (elapsed >= M_70 && ((elapsed - M_70) % (15UL * 60UL * 1000UL) >= 12UL * 60UL * 1000UL));
-  if (elapsed < M_50 || isAwakeInTier5)
+  if (!inMicroEvent && (elapsed < M_50 || isAwakeInTier5))
   {
     if (now - lastGazeShift > gazeInterval)
     {

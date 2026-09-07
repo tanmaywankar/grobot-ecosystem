@@ -7,7 +7,7 @@ const MoodData SAD = {0, 0, -52, 30, 45};
 const MoodData ANGRY = {0, 0, 60, 30, 45};
 const MoodData HORRIFIED = {0, 0, 0, 30, 32};
 const MoodData SHOCKED = {0, 0, 0, 15, 50};
-const MoodData KAWAII = {0, 0, 0, 23, 50};
+const MoodData KAWAII = {1, 41, 0, 30, 45};
 const MoodData BORED = {50, 0, 0, 0, 45};
 const MoodData FEDUP = {50, 34, 0, 0, 45};
 const MoodData SCARED = {0, 31, -38, 11, 45};
@@ -18,7 +18,7 @@ const MoodData DOUBTING = {16, 0, 0, 30, 45};
 // below mood can be used as a loop where one eye state is one of below states and the other is the IDLE state. or can be used for both eyes as well.
 const MoodData IDLELOAD = {0, 0, 0, 18, 36};
 const MoodData SATISFIED = {50, 0, 0, 30, 45};
-const MoodData UNBELIEVABLE = {0, 20, 19, 30, 45};
+const MoodData UNBELIEVABLE = {0, 1, -21, 30, 45};
 
 
 //SLEEPY MOODS: these moods can be switched i.e left can become right and right can become left 
