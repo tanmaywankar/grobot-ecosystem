@@ -7,6 +7,7 @@ struct SensorData {
   float pressure    = 0.0f;
   int   soilMoisture = 0;
   int   light       = 0;
+  int   rawAdc      = 0;
   bool  isLeftTouched  = false;
   bool  isRightTouched = false;
 };

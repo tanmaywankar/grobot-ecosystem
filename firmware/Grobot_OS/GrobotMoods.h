@@ -2,6 +2,7 @@
 #include <Grobot_Animations.h>
 
 const MoodData HAPPY = {0, 50, 0, 30, 45};
+const MoodData CUDDLE = {0, 50, 0, 0, 45};
 const MoodData SAD = {0, 0, -52, 30, 45};
 const MoodData ANGRY = {0, 0, 60, 30, 45};
 const MoodData HORRIFIED = {0, 0, 0, 30, 32};

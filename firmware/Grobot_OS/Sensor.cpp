@@ -11,7 +11,7 @@
 // Calibration constants
 #define SOIL_DRY_RAW 3200  
 #define SOIL_WET_RAW 1450
-#define TOUCH_THRESHOLD 20
+#define TOUCH_THRESHOLD 30
 
 static Adafruit_BME280 bme;
 
@@ -29,6 +29,7 @@ static int readSmoothedADC(int pin, int samples = 16)
 void initSensors()
 {
   Wire.begin(21, 22);
+  Wire.setTimeOut(50000);
   if (!bme.begin(0x76, &Wire) && !bme.begin(0x77, &Wire))
   {
     Serial.println("[WARNING] BME280 not found, check wiring!");
@@ -84,6 +85,7 @@ void sensorTask(void *pvParameters)
         data.humidity = isnan(hum) ? data.humidity : hum;
         data.pressure = isnan(pres) ? data.pressure : pres;
         data.soilMoisture = soilPercent;
+        data.rawAdc = rawSoil;
         data.light = rawLight;
         xSemaphoreGive(dataMutex);
       }
