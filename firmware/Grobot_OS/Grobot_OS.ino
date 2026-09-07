@@ -3,12 +3,14 @@
 #include "Sensor.h"
 #include "Display.h"
 #include "WiFiPortal.h"
+#include "Network.h"
 
 // Shared data state & mutex
 SensorData data;
 SemaphoreHandle_t dataMutex;
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
 
   dataMutex = xSemaphoreCreateMutex();
@@ -21,28 +23,35 @@ void setup() {
 
   // 3. Core 0: High-frequency touch & BME/ADC reads
   xTaskCreatePinnedToCore(
-    sensorTask,
-    "SensorWorker",
-    4096,
-    NULL,
-    1,
-    NULL,
-    0
-  );
+      sensorTask,
+      "SensorWorker",
+      4096,
+      NULL,
+      1,
+      NULL,
+      0);
 
   // 4. Core 0: Wi-Fi autoconnect / Captive Portal
   xTaskCreatePinnedToCore(
-    wifiTask,
-    "WiFiWorker",
-    8192,
-    NULL,
-    1,
-    NULL,
-    0
-  );
-}
+      wifiTask,
+      "WiFiWorker",
+      8192,
+      NULL,
+      1,
+      NULL,
+      0);
 
-void loop() {
+  xTaskCreatePinnedToCore(
+      networkTask,
+      "NetworkTask",
+      4096,
+      nullptr,
+      1,
+      nullptr,
+      0);
+}
+void loop()
+{
   // Core 1 runs eye animations and patting gestures without blocking
   updateDisplay();
 }
