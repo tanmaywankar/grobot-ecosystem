@@ -3,6 +3,7 @@
 #include <WebServer.h>
 #include <DNSServer.h>
 #include <Preferences.h>
+#include "Secrets.h"
 
 static WebServer server(80);
 static DNSServer dnsServer;
@@ -12,10 +13,17 @@ static const byte DNS_PORT = 53;
 static const IPAddress apIP(192, 168, 4, 1);
 
 static String lastSSID = "";
+static String lastBroker = "";
 static bool wifiReady = false;
 
 bool isWiFiConnected() {
   return wifiReady && (WiFi.status() == WL_CONNECTED);
+}
+String getSavedBrokerHost() {
+  prefs.begin("grobot_wifi", true);
+  String host = prefs.getString("broker", SECRET_BROKER_IP);
+  prefs.end();
+  return (host.length() > 0) ? host : String(SECRET_BROKER_IP);
 }
 
 static void handleRoot() {
@@ -40,6 +48,10 @@ static void handleRoot() {
     }
   }
   WiFi.scanDelete();
+
+  prefs.begin("grobot_wifi", true);
+lastBroker = prefs.getString("broker", SECRET_BROKER_IP);
+prefs.end();
 
   String html = R"rawliteral(
 <!DOCTYPE html>
@@ -107,13 +119,16 @@ static void handleRoot() {
   html += "<div class='list-label'>Select Wi-Fi Network</div>";
   html += "<div class='net-list'>" + networkListHtml + "</div>";
 
+html += "<form action='/save' method='POST'>";
+  html += "<input type='text' id='ssid' name='ssid' placeholder='Network Name (SSID)' required autocomplete='off'>";
+  html += "<input type='password' id='password' name='password' placeholder='Password (if secured)'>";
+  html += "<div class='list-label'>MQTT Broker IP / Host</div>";
+  html += "<input type='text' id='broker' name='broker' value='" + lastBroker + "' placeholder='e.g. 192.168.1.100' required autocomplete='off'>";
+  html += "<button type='submit'>Save & Connect</button>";
+  html += "</form>";
+  html += "</div>";
+
   html += R"rawliteral(
-    <form action="/save" method="POST">
-      <input type="text" id="ssid" name="ssid" placeholder="Network Name (SSID)" required autocomplete="off">
-      <input type="password" id="password" name="password" placeholder="Password (if secured)">
-      <button type="submit">Save & Connect</button>
-    </form>
-  </div>
   <script>
     function selectSSID(name) {
       document.getElementById('ssid').value = name;
@@ -131,10 +146,12 @@ static void handleSave() {
   if (server.hasArg("ssid")) {
     String newSSID = server.arg("ssid");
     String newPass = server.arg("password");
+    String newBroker = server.hasArg("broker") ? server.arg("broker") : String(SECRET_BROKER_IP);
 
     prefs.begin("grobot_wifi", false);
     prefs.putString("ssid", newSSID);
     prefs.putString("pass", newPass);
+    prefs.putString("broker", newBroker);
     prefs.end();
 
     String resHtml = R"rawliteral(

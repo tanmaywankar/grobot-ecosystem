@@ -3,7 +3,7 @@
 #include "Sensor.h"
 #include "Display.h"
 #include "WiFiPortal.h"
-#include "Network.h"
+#include "GrobotNetwork.h"
 
 // Shared data state & mutex
 SensorData data;

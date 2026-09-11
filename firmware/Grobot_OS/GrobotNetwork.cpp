@@ -1,4 +1,4 @@
-#include "Network.h"
+#include "GrobotNetwork.h"
 #include "GrobotSystem.h"
 #include "WiFiPortal.h"
 #include "Secrets.h"
@@ -11,10 +11,11 @@ static WiFiClient espClient;
 static PubSubClient mqttClient(espClient);
 
 // Broker details
-static const char *BROKER_IP = SECRET_BROKER_IP;
 static const uint16_t BROKER_PORT = 1883;
 
 static const char *API_KEY = SECRET_API_KEY;
+static String activeBrokerHost = "";
+
 
 // Timers for non-blocking execution
 static uint32_t lastMqttReconnect = 0;
@@ -30,6 +31,9 @@ static void checkMqtt()
     if (now - lastMqttReconnect >= 5000)
     {
         lastMqttReconnect = now;
+
+        activeBrokerHost = getSavedBrokerHost();
+        mqttClient.setServer(activeBrokerHost.c_str(), BROKER_PORT);
 
         String mac = WiFi.macAddress();
         String clientid = "Grobot-" + mac.substring(mac.length() - 5);
@@ -86,27 +90,31 @@ static void sendTelemetry()
     }
 }
 
+
 void networkTask(void *pvParameters)
 {
-  Serial.println("[Network Task] Running on Core 0");
+    Serial.println("[Network Task] Running on Core 0");
 
-  mqttClient.setServer(BROKER_IP, BROKER_PORT);
-  mqttClient.setBufferSize(384);
+    activeBrokerHost = getSavedBrokerHost();
+    Serial.printf("[MQTT] Target Broker: %s:%d\n", activeBrokerHost.c_str(), BROKER_PORT);
 
-  for (;;)
-  {
-    if (isWiFiConnected())
+    mqttClient.setServer(activeBrokerHost.c_str(), BROKER_PORT);
+    mqttClient.setBufferSize(384);
+
+    for (;;)
     {
-      checkMqtt();
+        if (isWiFiConnected())
+        {
+            checkMqtt();
 
-      if (mqttClient.connected())
-      {
-        mqttClient.loop();
-        sendTelemetry();
-      }
+            if (mqttClient.connected())
+            {
+                mqttClient.loop();
+                sendTelemetry();
+            }
+        }
+
+        // Yield 20ms to prevent starving the Core 0 network stack
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
-
-    // Yield 20ms to prevent starving the Core 0 network stack
-    vTaskDelay(pdMS_TO_TICKS(20));
-  }
 }
