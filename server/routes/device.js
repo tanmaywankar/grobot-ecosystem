@@ -192,17 +192,16 @@ if (io) {
   io.to(`device:${device.id}`).emit("command:execute", commandPacket);
 }
 
-const aedes = req.app.get("aedes");
-if (aedes) {
-  aedes.publish({
-    topic: `grobot/${device.id}/command`,
-    payload: JSON.stringify(commandPacket),
-    qos: 0,
-    retain: false,
-  },
-    (err) => {
-      if (err) console.error("[MQTT Publish Error]:", err.message);
-    });
+// Forward command directly to the connected ESP32 WebSocket
+const robotClients = req.app.get("robotClients");
+if (robotClients && robotClients.has(device.id)) {
+  const robotSocket = robotClients.get(device.id);
+  if (robotSocket.readyState === 1) { // 1 = OPEN
+    robotSocket.send(JSON.stringify({
+      type: "command",
+      ...commandPacket,
+    }));
+  }
 }
 
     return res.status(200).json({
