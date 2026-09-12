@@ -122,7 +122,7 @@ prefs.end();
 html += "<form action='/save' method='POST'>";
   html += "<input type='text' id='ssid' name='ssid' placeholder='Network Name (SSID)' required autocomplete='off'>";
   html += "<input type='password' id='password' name='password' placeholder='Password (if secured)'>";
-  html += "<div class='list-label'>MQTT Broker IP / Host</div>";
+  html += "<div class='list-label'>Backend Server Host / IP</div>";
   html += "<input type='text' id='broker' name='broker' value='" + lastBroker + "' placeholder='e.g. 192.168.1.100' required autocomplete='off'>";
   html += "<button type='submit'>Save & Connect</button>";
   html += "</form>";

@@ -3,52 +3,80 @@
 #include "WiFiPortal.h"
 #include "Secrets.h"
 #include <WiFi.h>
-#include <PubSubClient.h>
+#include <WebSocketsClient.h>
 #include <ArduinoJson.h>
 
-// Low-level TCP client and MQTT wrapper
-static WiFiClient espClient;
-static PubSubClient mqttClient(espClient);
+// WebSockets client instance
+static WebSocketsClient webSocket;
 
-// Broker details
-static const uint16_t BROKER_PORT = 1883;
-
+// Server details
+static const uint16_t SERVER_PORT = 8080;
+static const char *WS_PATH = "/ws/robot";
 static const char *API_KEY = SECRET_API_KEY;
-static String activeBrokerHost = "";
 
+static String activeServerHost = "";
+static bool wsConnected = false;
 
 // Timers for non-blocking execution
-static uint32_t lastMqttReconnect = 0;
+static uint32_t lastWsReconnect = 0;
 static uint32_t lastTelemetrySend = 0;
 
-static void checkMqtt()
+bool isWebSocketConnected()
 {
-    if (!isWiFiConnected() || mqttClient.connected())
+    return wsConnected;
+}
+
+static void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
+{
+    switch (type)
+    {
+    case WStype_DISCONNECTED:
+        wsConnected = false;
+        Serial.println("[WS] Disconnected from server");
+        break;
+
+    case WStype_CONNECTED:
+        wsConnected = true;
+        Serial.printf("[WS] Connected to ws://%s:%d%s\n", activeServerHost.c_str(), SERVER_PORT, WS_PATH);
+        break;
+
+    case WStype_TEXT:
+        Serial.printf("[WS] Received: %s\n", payload);
+        break;
+
+    case WStype_ERROR:
+        Serial.println("[WS] Error occurred");
+        break;
+
+    default:
+        break;
+    }
+}
+
+static void checkWebSocket()
+{
+    if (!isWiFiConnected() || wsConnected)
         return;
 
     uint32_t now = millis();
-
-    if (now - lastMqttReconnect >= 5000)
+    if (now - lastWsReconnect >= 5000)
     {
-        lastMqttReconnect = now;
+        lastWsReconnect = now;
+        activeServerHost = getSavedBrokerHost();
 
-        activeBrokerHost = getSavedBrokerHost();
-        mqttClient.setServer(activeBrokerHost.c_str(), BROKER_PORT);
+        Serial.printf("[WS] Connecting to %s:%d%s...\n", activeServerHost.c_str(), SERVER_PORT, WS_PATH);
+
+        webSocket.begin(activeServerHost.c_str(), SERVER_PORT, WS_PATH);
 
         String mac = WiFi.macAddress();
-        String clientid = "Grobot-" + mac.substring(mac.length() - 5);
-        clientid.replace(":", "");
+        String clientId = "Grobot-" + mac.substring(mac.length() - 5);
+        clientId.replace(":", "");
 
-        if (mqttClient.connect(clientid.c_str(), "grobot", API_KEY))
-        {
-            Serial.println("CONNECTED!");
-        }
-        else
-        {
-            Serial.print("FAILED (rc=");
-            Serial.print(mqttClient.state());
-            Serial.println(")");
-        }
+        String extraHeaders = "x-api-key: " + String(API_KEY) + "\r\nx-device-id: " + clientId;
+        webSocket.setExtraHeaders(extraHeaders.c_str());
+
+        webSocket.onEvent(webSocketEvent);
+        webSocket.setReconnectInterval(5000);
     }
 }
 
@@ -71,6 +99,7 @@ static void sendTelemetry()
     }
 
     JsonDocument doc;
+    doc["type"] = "telemetry";
     doc["temperature"] = current.temperature;
     doc["humidity"] = current.humidity;
     doc["light"] = current.light;
@@ -82,39 +111,34 @@ static void sendTelemetry()
 
     if (len > 0)
     {
-        bool published = mqttClient.publish("grobot/telemetry", buffer);
-        if (!published)
+        bool sent = webSocket.sendTXT(buffer);
+        if (!sent)
         {
-            Serial.println("[MQTT] Telemetry publish failed");
+            Serial.println("[WS] Telemetry send failed");
         }
     }
 }
 
-
 void networkTask(void *pvParameters)
 {
-    Serial.println("[Network Task] Running on Core 0");
+    Serial.println("[Network Task] Running WebSockets on Core 0");
 
-    activeBrokerHost = getSavedBrokerHost();
-    Serial.printf("[MQTT] Target Broker: %s:%d\n", activeBrokerHost.c_str(), BROKER_PORT);
-
-    mqttClient.setServer(activeBrokerHost.c_str(), BROKER_PORT);
-    mqttClient.setBufferSize(384);
+    activeServerHost = getSavedBrokerHost();
+    Serial.printf("[WS] Target Server: %s:%d\n", activeServerHost.c_str(), SERVER_PORT);
 
     for (;;)
     {
         if (isWiFiConnected())
         {
-            checkMqtt();
+            checkWebSocket();
+            webSocket.loop();
 
-            if (mqttClient.connected())
+            if (wsConnected)
             {
-                mqttClient.loop();
                 sendTelemetry();
             }
         }
 
-        // Yield 20ms to prevent starving the Core 0 network stack
-        vTaskDelay(pdMS_TO_TICKS(20));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
