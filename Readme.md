@@ -50,7 +50,7 @@ grobot-ecosystem/
 **To run the firmware you need:**
 - An **ESP32** board (Dev Module or equivalent)
 - **TFT_eSPI** library — display driver
-- **Grobot_Animations** library — spring-physics eye rendering engine *(bundled in `/firmware/libraries`)*
+- **Grobot_Animations** library — spring-physics eye rendering engine
 - **ArduinoJson** (v7.x) — JSON serialisation
 - **WebSockets** by Markus Sattler — WebSocket client
 - **Adafruit BME280** + **Adafruit Unified Sensor** — environmental sensor drivers
