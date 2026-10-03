@@ -111,10 +111,15 @@ static void handleMicroEvents(uint32_t now, uint32_t elapsed)
       return;
     }
 
-    // Stage 1 (0-5m): Satisfied alternating wink loop
-    if (elapsed < 5UL * 60UL * 1000UL)
+    // Use time since the micro-event started for stage progression,
+    // NOT the global care-elapsed time. Otherwise events triggered late
+    // in the care timeline would skip stages 1 & 2 entirely.
+    uint32_t microElapsed = now - lastMicroEventTime;
+
+    // Stage 1 (0-5m of micro-event): Satisfied alternating wink loop
+    if (microElapsed < 5UL * 60UL * 1000UL)
     {
-      if (now - microPhaseStepTime >= 2000)
+      if (now - microPhaseStepTime >= 800)
       {
         microPhaseStepTime = now;
         microEventPhase = (microEventPhase + 1) % 2;
@@ -124,8 +129,8 @@ static void handleMicroEvents(uint32_t now, uint32_t elapsed)
       else
         eyes.setEmotion(IDLE, IDLELOAD);
     }
-    // Stage 2 (5-20m): Idleload on one eye + Idle on other
-    else if (elapsed < 20UL * 60UL * 1000UL)
+    // Stage 2 (5-20m of micro-event): Idleload on one eye + Idle on other
+    else if (microElapsed < 20UL * 60UL * 1000UL)
     {
       if (now - microPhaseStepTime >= 2000)
       {
@@ -137,8 +142,8 @@ static void handleMicroEvents(uint32_t now, uint32_t elapsed)
       else
         eyes.setEmotion(IDLE, SATISFIED);
     }
-    // Stage 3 (20-50m): Doubting or Unbelievable shrugs
-    else if (elapsed < 50UL * 60UL * 1000UL)
+    // Stage 3 (20-50m of micro-event): Doubting or Unbelievable shrugs
+    else if (microElapsed < 50UL * 60UL * 1000UL)
     {
       if (now - microPhaseStepTime >= 2500)
       {
@@ -342,20 +347,25 @@ static bool checkPatting(const SensorData &s)
 
 void updateDisplay()
 {
-  SensorData currentData;
+  // Keep a static fallback snapshot so that if the mutex is busy,
+  // we render with the last known-good data instead of zeroed defaults.
+  // Zeroed data would cause false touch releases and phantom soil-care events.
+  static SensorData lastKnownData;
+
   if (xSemaphoreTake(dataMutex, pdMS_TO_TICKS(10)) == pdTRUE)
   {
-    currentData = data;
+    lastKnownData = data;
     xSemaphoreGive(dataMutex);
   }
+  // If mutex fails, lastKnownData retains the previous valid reading — no early return needed.
 
-  checkSoilCare(currentData);
+  checkSoilCare(lastKnownData);
 
-  if (!checkPatting(currentData))
+  if (!checkPatting(lastKnownData))
   {
     idleMoodSwitch();
   }
 
   eyes.renderEmotions(canvas);
   eyes.HUD(tft);
-}
+}

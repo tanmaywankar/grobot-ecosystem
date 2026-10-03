@@ -29,7 +29,7 @@ static int readSmoothedADC(int pin, int samples = 16)
 void initSensors()
 {
   Wire.begin(21, 22);
-  Wire.setTimeOut(50000);
+  Wire.setTimeOut(50); // 50 ms — prevents 50-second hangs if BME280 bus glitches
   if (!bme.begin(0x76, &Wire) && !bme.begin(0x77, &Wire))
   {
     Serial.println("[WARNING] BME280 not found, check wiring!");

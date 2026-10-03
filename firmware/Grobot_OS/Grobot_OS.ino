@@ -54,4 +54,7 @@ void loop()
 {
   // Core 1 runs eye animations and patting gestures without blocking
   updateDisplay();
+  // Yield to the FreeRTOS IDLE task to feed the task watchdog timer (TWDT).
+  // Without this, the tight loop starves Core 1's IDLE task and causes reboots.
+  vTaskDelay(pdMS_TO_TICKS(10));
 }

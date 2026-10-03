@@ -62,21 +62,24 @@ static void checkWebSocket()
     if (now - lastWsReconnect >= 5000)
     {
         lastWsReconnect = now;
-        activeServerHost = getSavedBrokerHost();
 
+        // activeServerHost is read once at task startup and never changes
+        // without a reboot (credentials can only change via the captive portal
+        // which calls ESP.restart()), so no NVS read is needed here.
         Serial.printf("[WS] Connecting to %s:%d%s...\n", activeServerHost.c_str(), SERVER_PORT, WS_PATH);
-
-        webSocket.begin(activeServerHost.c_str(), SERVER_PORT, WS_PATH);
 
         String mac = WiFi.macAddress();
         String clientId = "Grobot-" + mac.substring(mac.length() - 5);
         clientId.replace(":", "");
 
+        // Configure event handler and headers BEFORE begin() so they are
+        // guaranteed to be in place before the handshake is initiated.
         String extraHeaders = "x-api-key: " + String(API_KEY) + "\r\nx-device-id: " + clientId;
-        webSocket.setExtraHeaders(extraHeaders.c_str());
-
         webSocket.onEvent(webSocketEvent);
+        webSocket.setExtraHeaders(extraHeaders.c_str());
         webSocket.setReconnectInterval(5000);
+
+        webSocket.begin(activeServerHost.c_str(), SERVER_PORT, WS_PATH);
     }
 }
 
@@ -109,13 +112,19 @@ static void sendTelemetry()
     char buffer[256];
     size_t len = serializeJson(doc, buffer, sizeof(buffer));
 
-    if (len > 0)
+    // len == sizeof(buffer)-1 means the output was silently truncated,
+    // which would produce malformed JSON. Reject it rather than send garbage.
+    if (len > 0 && len < sizeof(buffer) - 1)
     {
         bool sent = webSocket.sendTXT(buffer);
         if (!sent)
         {
             Serial.println("[WS] Telemetry send failed");
         }
+    }
+    else if (len >= sizeof(buffer) - 1)
+    {
+        Serial.println("[WS] Telemetry JSON truncated — increase buffer size");
     }
 }
 

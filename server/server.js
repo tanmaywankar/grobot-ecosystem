@@ -16,24 +16,27 @@ const PORT = process.env.PORT || 8080;
 const robotWss = new WebSocketServer({ noServer: true });
 const dashboardWss = new WebSocketServer({ noServer: true });
 
-const robotClients = new Map(); // key: deviceId, value: ws
-const dashboardClients = new Set(); // set of active browser sockets
+const robotClients = new Map(); // key: deviceId, value: ws 
+const dashboardClients = new Set(); // set of active browser sockets so that there are no two devices with same id
 
 app.set("robotClients", robotClients);
 
 // Route incoming WebSocket connections by URL path
 server.on("upgrade", (request, socket, head) => {
   const { pathname } = new URL(request.url, `http://${request.headers.host}`);
-
+//check if the current communication is with robo or with dashboard
   if (pathname === "/ws/robot") {
     robotWss.handleUpgrade(request, socket, head, (ws) => {
+      // if its from robo then use the robo server to emit connection request
       robotWss.emit("connection", ws, request);
     });
   } else if (pathname === "/ws/dashboard") {
+    // else if its from dashboard then use the dashboard server to emit connection request
     dashboardWss.handleUpgrade(request, socket, head, (ws) => {
       dashboardWss.emit("connection", ws, request);
     });
   } else {
+    //if its from neither then just exit
     socket.destroy();
   }
 });
@@ -68,6 +71,7 @@ robotWss.on("connection", async (ws, req) => {
     }
 
     ws.deviceId = device.id;
+    //adds the device in in our roboclients list
     robotClients.set(device.id, ws);
 
     await prisma.device.update({
@@ -84,7 +88,7 @@ robotWss.on("connection", async (ws, req) => {
     console.log(`[WS Robot] Online: ${device.name} (${device.id})`);
 
     ws.on("message", (data, isBinary) => {
-      if (isBinary) return; // Audio chunk placeholder
+      if (isBinary) return; 
 
       try {
         const raw = JSON.parse(data.toString());

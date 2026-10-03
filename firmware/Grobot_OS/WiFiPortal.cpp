@@ -50,8 +50,8 @@ static void handleRoot() {
   WiFi.scanDelete();
 
   prefs.begin("grobot_wifi", true);
-lastBroker = prefs.getString("broker", SECRET_BROKER_IP);
-prefs.end();
+  lastBroker = prefs.getString("broker", SECRET_BROKER_IP);
+  prefs.end();
 
   String html = R"rawliteral(
 <!DOCTYPE html>
@@ -165,7 +165,10 @@ static void handleSave() {
     )rawliteral";
 
     server.send(200, "text/html", resHtml);
-    delay(2000);
+    // Use vTaskDelay instead of delay() — we are inside a FreeRTOS task.
+    // delay() blocks without yielding, which starves the scheduler and can
+    // prevent the watchdog from being fed before ESP.restart() is reached.
+    vTaskDelay(pdMS_TO_TICKS(2000));
     ESP.restart();
   } else {
     server.send(400, "text/plain", "Missing SSID");
@@ -175,63 +178,117 @@ static void handleSave() {
 static void startConfigPortal() {
   Serial.println("\n[WiFi] Starting AP Mode: 'Grobot-Setup'");
 
-  WiFi.mode(WIFI_AP);
+  bool hasCreds = (lastSSID.length() > 0);
+  WiFi.mode(hasCreds ? WIFI_AP_STA : WIFI_AP);
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
   WiFi.softAP("Grobot-Setup");
 
   dnsServer.start(DNS_PORT, "*", apIP);
 
-  server.on("/", HTTP_GET, handleRoot);
-  server.on("/save", HTTP_POST, handleSave);
-  server.onNotFound(handleRoot);
+  // Guard handler registration with a static flag.
+  // wifiTask's outer loop can call startConfigPortal() more than once
+  // (e.g., after a reconnect failure). WebServer appends handlers to an
+  // internal linked list without clearing old ones, so repeated calls
+  // to server.on() leak memory and corrupt the routing table.
+  static bool portalInitialized = false;
+  if (!portalInitialized)
+  {
+    server.on("/", HTTP_GET, handleRoot);
+    server.on("/save", HTTP_POST, handleSave);
+    server.onNotFound(handleRoot);
+    server.begin();
+    portalInitialized = true;
+  }
 
-  server.begin();
   Serial.println("[WiFi] Web portal running at 192.168.4.1");
+
+  String savedPass = "";
+  if (hasCreds) {
+    prefs.begin("grobot_wifi", true);
+    savedPass = prefs.getString("pass", "");
+    prefs.end();
+  }
+
+  uint32_t lastReconnectAttempt = millis();
 
   while (true) {
     dnsServer.processNextRequest();
     server.handleClient();
+    
+    // Background reconnect attempt every 10 seconds
+    if (hasCreds && millis() - lastReconnectAttempt > 10000) {
+      lastReconnectAttempt = millis();
+      if (WiFi.status() != WL_CONNECTED) {
+        WiFi.begin(lastSSID.c_str(), savedPass.c_str());
+      } else {
+        Serial.println("\n[WiFi] Background reconnect successful! Closing portal.");
+        server.stop();
+        dnsServer.stop();
+        WiFi.softAPdisconnect(true);
+        return;
+      }
+    }
+    
     vTaskDelay(pdMS_TO_TICKS(10));
   }
 }
 
 void wifiTask(void *pvParameters) {
-  prefs.begin("grobot_wifi", true);
-  String savedSSID = prefs.getString("ssid", "");
-  String savedPass = prefs.getString("pass", "");
-  prefs.end();
+  for (;;) {
+    prefs.begin("grobot_wifi", true);
+    String savedSSID = prefs.getString("ssid", "");
+    String savedPass = prefs.getString("pass", "");
+    prefs.end();
 
-  lastSSID = savedSSID;
+    lastSSID = savedSSID;
 
-  if (savedSSID.length() > 0) {
-    Serial.printf("[WiFi] Connecting to saved network: %s\n", savedSSID.c_str());
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(savedSSID.c_str(), savedPass.c_str());
+    if (savedSSID.length() > 0) {
+      Serial.printf("[WiFi] Connecting to saved network: %s\n", savedSSID.c_str());
+      WiFi.mode(WIFI_STA);
+      WiFi.begin(savedSSID.c_str(), savedPass.c_str());
 
-    uint32_t startAttempt = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - startAttempt < 10000) {
-      delay(400);
-      Serial.print(".");
-    }
-
-    if (WiFi.status() == WL_CONNECTED) {
-      Serial.printf("\n[WiFi] Connected! Local IP: %s\n", WiFi.localIP().toString().c_str());
-      wifiReady = true;
-
-      // Keep task alive to monitor Wi-Fi status
-      for (;;) {
-        if (WiFi.status() != WL_CONNECTED) {
-          Serial.println("\n[WiFi] Connection lost. Reconnecting...");
-          WiFi.reconnect();
-        }
-        vTaskDelay(pdMS_TO_TICKS(5000));
+      uint32_t startAttempt = millis();
+      while (WiFi.status() != WL_CONNECTED && millis() - startAttempt < 10000) {
+        delay(400);
+        Serial.print(".");
       }
-    }
-    Serial.println("\n[WiFi] Connection timed out.");
-  } else {
-    Serial.println("[WiFi] No saved credentials found.");
-  }
 
-  // Fallback: Launch configuration portal on Core 0
-  startConfigPortal();
+      if (WiFi.status() == WL_CONNECTED) {
+        Serial.printf("\n[WiFi] Connected! Local IP: %s\n", WiFi.localIP().toString().c_str());
+        wifiReady = true;
+
+        // Keep task alive to monitor Wi-Fi status
+        for (;;) {
+          if (WiFi.status() != WL_CONNECTED) {
+            wifiReady = false;
+            Serial.println("\n[WiFi] Connection lost. Reconnecting...");
+            WiFi.disconnect();
+            WiFi.begin(savedSSID.c_str(), savedPass.c_str());
+            
+            uint32_t reconnectStart = millis();
+            while (WiFi.status() != WL_CONNECTED && millis() - reconnectStart < 10000) {
+              vTaskDelay(pdMS_TO_TICKS(500));
+              Serial.print(".");
+            }
+            
+            if (WiFi.status() == WL_CONNECTED) {
+              Serial.printf("\n[WiFi] Reconnected! Local IP: %s\n", WiFi.localIP().toString().c_str());
+              wifiReady = true;
+            } else {
+              Serial.println("\n[WiFi] Reconnect failed, entering fallback.");
+              break; // Break the monitor loop to enter AP fallback
+            }
+          }
+          vTaskDelay(pdMS_TO_TICKS(5000));
+        }
+      } else {
+        Serial.println("\n[WiFi] Connection timed out.");
+      }
+    } else {
+      Serial.println("[WiFi] No saved credentials found.");
+    }
+
+    // Fallback: Launch configuration portal on Core 0
+    startConfigPortal();
+  }
 }
