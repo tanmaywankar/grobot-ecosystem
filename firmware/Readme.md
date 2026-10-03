@@ -32,7 +32,7 @@ This directory houses the core embedded software powering the Grobot hardware pl
 
 ### Required Libraries
 
-Install all of the following via **Tools → Manage Libraries** (or copy from the bundled `/firmware/libraries` folder into your Arduino libraries directory):
+Install all of the following via **Tools → Manage Libraries** :
 
 | Library | Author | Purpose |
 |---|---|---|
@@ -72,15 +72,10 @@ Install all of the following via **Tools → Manage Libraries** (or copy from th
 1. Navigate to your Arduino libraries folder and open `TFT_eSPI/User_Setup.h`.
 2. Comment out any existing driver and uncomment the one that matches your display:
    ```cpp
-   // #define ILI9341_DRIVER   // uncomment if using ILI9341
-   #define ST7789_DRIVER       // uncomment if using ST7789
+   #define ILI9341_DRIVER   // uncomment if using ILI9341
+   //#define ST7789_DRIVER       // uncomment if using ST7789
    ```
-3. Set the resolution (for a 320×120 strip display):
-   ```cpp
-   #define TFT_WIDTH  240
-   #define TFT_HEIGHT 135
-   ```
-4. Verify the pin definitions match the wiring table above:
+3. Verify the pin definitions match the wiring table above:
    ```cpp
    #define TFT_MOSI 23
    #define TFT_SCLK 18
@@ -100,7 +95,7 @@ Open `firmware/Grobot_OS/Secrets.h` and set your backend server's IP and your de
 #define SECRET_API_KEY    "gb_your_key"    // API key from the server's device registration
 ```
 
-> The Wi-Fi credentials (SSID & password) are **not** stored in code — they are entered via the captive portal on first boot (see §6).
+> The Wi-Fi credentials (SSID & password) are **not** stored in code — they are entered via the captive portal on first boot (see #6).
 
 ---
 
