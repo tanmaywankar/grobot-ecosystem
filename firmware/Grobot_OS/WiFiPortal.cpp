@@ -249,7 +249,7 @@ void wifiTask(void *pvParameters) {
 
       uint32_t startAttempt = millis();
       while (WiFi.status() != WL_CONNECTED && millis() - startAttempt < 10000) {
-        delay(400);
+        vTaskDelay(pdMS_TO_TICKS(400));
         Serial.print(".");
       }
 

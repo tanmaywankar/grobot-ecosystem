@@ -116,7 +116,7 @@ static void handleMicroEvents(uint32_t now, uint32_t elapsed)
     // in the care timeline would skip stages 1 & 2 entirely.
     uint32_t microElapsed = now - lastMicroEventTime;
 
-    // Stage 1 (0-5m of micro-event): Satisfied alternating wink loop
+    // Phase 1 – always active (event runs 8–18 s total, well under the 5-min threshold):
     if (microElapsed < 5UL * 60UL * 1000UL)
     {
       if (now - microPhaseStepTime >= 800)
@@ -129,7 +129,7 @@ static void handleMicroEvents(uint32_t now, uint32_t elapsed)
       else
         eyes.setEmotion(IDLE, IDLELOAD);
     }
-    // Stage 2 (5-20m of micro-event): Idleload on one eye + Idle on other
+    // Phase 2 – placeholder for future longer event variants (threshold: 5-min):
     else if (microElapsed < 20UL * 60UL * 1000UL)
     {
       if (now - microPhaseStepTime >= 2000)
@@ -142,7 +142,7 @@ static void handleMicroEvents(uint32_t now, uint32_t elapsed)
       else
         eyes.setEmotion(IDLE, SATISFIED);
     }
-    // Stage 3 (20-50m of micro-event): Doubting or Unbelievable shrugs
+    // Phase 3 – placeholder for future longer event variants (threshold: 20-min):
     else if (microElapsed < 50UL * 60UL * 1000UL)
     {
       if (now - microPhaseStepTime >= 2500)

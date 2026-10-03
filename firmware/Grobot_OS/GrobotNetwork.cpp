@@ -69,7 +69,7 @@ static void checkWebSocket()
         Serial.printf("[WS] Connecting to %s:%d%s...\n", activeServerHost.c_str(), SERVER_PORT, WS_PATH);
 
         String mac = WiFi.macAddress();
-        String clientId = "Grobot-" + mac.substring(mac.length() - 5);
+        String clientId = "Grobot-" + mac.substring(mac.length() - 8);
         clientId.replace(":", "");
 
         // Configure event handler and headers BEFORE begin() so they are

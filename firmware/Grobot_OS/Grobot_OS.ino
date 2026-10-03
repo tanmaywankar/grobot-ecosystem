@@ -26,9 +26,9 @@ void setup()
       sensorTask,
       "SensorWorker",
       4096,
-      NULL,
+      nullptr,
       1,
-      NULL,
+      nullptr,
       0);
 
   // 4. Core 0: Wi-Fi autoconnect / Captive Portal
@@ -36,9 +36,9 @@ void setup()
       wifiTask,
       "WiFiWorker",
       8192,
-      NULL,
+      nullptr,
       1,
-      NULL,
+      nullptr,
       0);
 
   xTaskCreatePinnedToCore(
