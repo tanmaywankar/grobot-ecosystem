@@ -83,8 +83,3 @@ The above is a quick overview of what's needed to get each part running.
 > - **[firmware/Readme.md](./firmware/Readme.md)** — complete firmware setup and flashing guide
 > - **[server/Readme.md](./server/Readme.md)** — complete server setup, database config, and API reference
 
----
-
-## License
-
-[MIT](./LICENSE.md) — free to use, build on, and contribute to.
