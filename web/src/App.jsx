@@ -1,7 +1,14 @@
+import TopNavbar from "./components/topNavbar.jsx";
+
+import logoUrl from './assets/logoHero.png';
+import placeholder from './assets/accountPlaceholder.png';
 export default function App() {
   return (
-    <div className="min-h-screen bg-canvas text-text-main flex items-center justify-center">
-      <h1 className="text-[64px] font-medium">Grobotaro</h1>
+    <div className="min-h-screen bg-canvas text-text-main flex flex-col items-center">
+      <TopNavbar
+      logoUrl = {logoUrl}
+      placeholder={placeholder}
+      />
     </div>
   );
 }
