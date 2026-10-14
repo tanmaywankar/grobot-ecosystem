@@ -8,8 +8,8 @@ return(
         <div className='size-14 flex items-center justify-center bg-card rounded-full'>
             <Bell size={28} strokeWidth={1.5}/>
         </div>
-        <div className='ml-5 p-2 bg-card rounded-full items-center flex flex-row'>
-            <img src={placeholder} alt="userplaceholder" className='size-10 rounded-full border-4 border-mint' />
+        <div className='ml-5 p-1 bg-card rounded-full items-center flex flex-row'>
+            <img src={placeholder} alt="userplaceholder" className='size-11 rounded-full border-4 border-mint' />
             <ChevronDown size={28} strokeWidth={1.5} className='ml-1' />
         </div>
      </div>
