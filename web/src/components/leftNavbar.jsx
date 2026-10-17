@@ -4,8 +4,8 @@ export default function LeftNavbar() {
     <div className="flex flex-col justify-between h-full">
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-4 p-2 rounded-xl bg-card-highlight cursor-pointer">
-          <Bot className="shrink-0" size={30} />
-          <span className="whitespace-nowrap hidden group-hover:inline text-lg font-medium">
+          <Bot className="shrink-0 -translate-y-0.5" size={30} />
+          <span className="whitespace-nowrap hidden group-hover:inline text-lg font-medium leading-none">
             Devices
           </span>
         </div>
