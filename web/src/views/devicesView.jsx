@@ -42,7 +42,7 @@ export default function DevicesView() {
           type="button"
           onClick={handleAddDevice}
           aria-label="Add new device"
-          className="w-full max-w-[380px] aspect-[17/11] rounded-3xl border-2 border-dashed border-placeholder hover:border-text-main text-placeholder hover:text-text-main flex flex-col items-center justify-center gap-3 transition-all duration-200 cursor-pointer hover:bg-card/30 group outline-none focus-visible:ring-2 focus-visible:ring-mint focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+          className="w-full max-w-[380px] aspect-[17/11] rounded-3xl border-2 border-dashed border-placeholder hover:border-text-main text-placeholder hover:text-text-main flex flex-col items-center justify-center gap-3 transition-all duration-200 cursor-pointer hover:bg-card/30 group outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-mint"
         >
           <div className="size-16 rounded-full border-2 border-dashed border-placeholder group-hover:border-text-main group-focus-visible:border-mint flex items-center justify-center transition-colors">
             <Plus size={32} />
