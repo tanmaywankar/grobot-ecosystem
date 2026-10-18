@@ -22,12 +22,12 @@ export default function DevicesView() {
   };
 
   return (
-    <div className="h-full w-full rounded-2xl overflow-y-auto flex flex-col gap-6 select-none">
-      <h1 className="text-3xl font-medium tracking-tight text-text-main">
+    <div className="h-full md:h-auto w-full rounded-3xl md:rounded-2xl overflow-y-auto md:overflow-visible flex flex-col gap-6 select-none">
+      <h1 className="text-3xl font-medium tracking-tight text-text-main ml-1">
         My Devices
       </h1>
 
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6 items-start">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6 items-start justify-items-center">
         {DEVICES.map((device) => (
           <DeviceCard
             key={device.id}

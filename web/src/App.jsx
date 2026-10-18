@@ -4,6 +4,8 @@ import DevicesView from "./views/devicesView.jsx";
 import DashboardView from "./views/dashboardView.jsx";
 import SettingsView from "./views/settingsView.jsx";
 import SupportView from "./views/supportView.jsx";
+import NotificationsView from "./views/notificationsView.jsx";
+import ProfileView from "./views/profileView.jsx";
 
 export default function App() {
   return (
@@ -15,6 +17,8 @@ export default function App() {
           <Route path="dashboard" element={<DashboardView />} />
           <Route path="settings" element={<SettingsView />} />
           <Route path="support" element={<SupportView />} />
+          <Route path="notifications" element={<NotificationsView />} />
+          <Route path="profile" element={<ProfileView />} />
         </Route>
       </Routes>
     </BrowserRouter>
