@@ -1,21 +1,22 @@
-import TopNavbar from "./components/topNavbar.jsx";
-import LeftNavbar from "./components/leftNavbar.jsx";
-import logoUrl from "./assets/logoHero.png";
-import placeholder from "./assets/accountPlaceholder.png";
-import DeviceCard from "./components/deviceCard.jsx";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import RootLayout from "./layouts/rootLayout.jsx";
+import DevicesView from "./views/devicesView.jsx";
+import DashboardView from "./views/dashboardView.jsx";
+import SettingsView from "./views/settingsView.jsx";
+import SupportView from "./views/supportView.jsx";
+
 export default function App() {
   return (
-    <div className="min-h-screen bg-canvas text-text-main flex flex-col px-7.5 pb-5">
-      <TopNavbar logoUrl={logoUrl} placeholder={placeholder} />
-      <div className="flex flex-1 gap-4 mt-2">
-        <aside className=" w-20 duration-200 hover:w-56 bg-card rounded-2xl p-4 group overflow-hidden">
-          <LeftNavbar />
-        </aside>
-        <main className="flex-1 rounded-2xl p-3">
-          <p className="text-3xl">My Devices</p>
-          <DeviceCard />
-        </main>
-      </div>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<RootLayout />}>
+          <Route index element={<Navigate to="/devices" replace />} />
+          <Route path="devices" element={<DevicesView />} />
+          <Route path="dashboard" element={<DashboardView />} />
+          <Route path="settings" element={<SettingsView />} />
+          <Route path="support" element={<SupportView />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }

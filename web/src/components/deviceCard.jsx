@@ -3,14 +3,28 @@ import grobotSvg from "../assets/grobotCard.svg";
 export default function DeviceCard({
   name = "Grobotaro",
   mood = "Happy",
-  status = "online",
+  status = "offline",
+  onClick,
 }) {
   const isOnline = status === "online";
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onClick?.();
+    }
+  };
+
   return (
     <div
-      className={`relative w-85 h-55 rounded-3xl px-6 py-3 flex flex-col justify-between overflow-hidden shadow-xl cursor-pointer transition-all duration-300 group my-5 ${
-        !isOnline ? "grayscale border border-slate-800" : "border-slate-800"
+      tabIndex={0}
+      role="button"
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+      aria-label={`${name}, status: ${status}, mood: ${mood}`}
+      /* Changed `px-6 py-3` to `px-6 pt-4 pb-0` so the bottom edge is completely flush */
+      className={`relative w-full max-w-[380px] aspect-[17/11] rounded-3xl px-6 pt-4 pb-0 flex flex-col justify-between overflow-hidden shadow-xl cursor-pointer transition-all duration-300 group outline-none focus-visible:ring-2 focus-visible:ring-mint focus-visible:ring-offset-2 focus-visible:ring-offset-canvas ${
+        !isOnline ? "grayscale border border-slate-800" : ""
       }`}
     >
       <div
@@ -21,6 +35,8 @@ export default function DeviceCard({
             : "radial-gradient(ellipse 60% 50% at 50% 68%, rgba(50, 60, 52, 0.2) 0%, rgba(31, 33, 31, 0.9) 70%, transparent 100%)",
         }}
       />
+      
+      {/* Top Header */}
       <div className="relative z-10 flex items-start justify-between">
         <div className="flex flex-col">
           <h2 className="text-2xl font-medium tracking-tight text-text-main">
@@ -32,7 +48,7 @@ export default function DeviceCard({
         </div>
 
         <span
-          className={`px-3 py-1 my-2 rounded-full text-xs font-light tracking-wide transition-colors ${
+          className={`px-3 py-1 my-1 rounded-full text-xs font-light tracking-wide transition-colors ${
             isOnline
               ? "bg-[#2C694E] text-text-main"
               : "bg-track text-text-muted"
@@ -41,11 +57,13 @@ export default function DeviceCard({
           {isOnline ? "Online" : "Offline"}
         </span>
       </div>
-      <div className="relative z-10 w-full flex items-end justify-center pt-4">
+
+      {/* Stage: Removed `pt-2`, added `leading-none` and `block` on the SVG to prevent baseline alignment shift */}
+      <div className="relative z-10 w-full flex items-end justify-center">
         <img
           src={grobotSvg}
           alt={name}
-          className="w-full h-auto max-h-36 object-contain pointer-events-none drop-shadow-[0_8px_16px_rgba(0,0,0,0.4)]"
+          className="w-full h-auto max-h-34 object-contain pointer-events-none drop-shadow-[0_8px_16px_rgba(0,0,0,0.4)] block -mb-px"
         />
       </div>
     </div>
