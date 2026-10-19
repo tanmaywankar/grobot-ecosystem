@@ -73,6 +73,15 @@ robotWss.on("connection", async (ws, req) => {
     ws.deviceId = device.id;
     ws.lastSeen = Date.now();
 
+    // If there is an existing socket for this device, clean up the old zombie connection
+    if (robotClients.has(device.id)) {
+      const oldWs = robotClients.get(device.id);
+      if (oldWs && oldWs !== ws) {
+        oldWs.isReplaced = true;
+        oldWs.terminate();
+      }
+    }
+
     //adds the device in in our roboclients list
     robotClients.set(device.id, ws);
 
@@ -130,7 +139,15 @@ robotWss.on("connection", async (ws, req) => {
     });
 
     ws.on("close", async (code, reason) => {
-      robotClients.delete(device.id);
+      // If this socket was replaced by a newer connection, don't delete from map or mark OFFLINE
+      if (ws.isReplaced) {
+        return;
+      }
+
+      if (robotClients.get(device.id) === ws) {
+        robotClients.delete(device.id);
+      }
+
       const reasonStr = reason ? reason.toString() : "No reason provided";
       console.log(`[WS Robot] Disconnected: ${device.name} (${device.id}) [Code: ${code}, Reason: ${reasonStr}]`);
 
