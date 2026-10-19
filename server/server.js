@@ -87,6 +87,8 @@ robotWss.on("connection", async (ws, req) => {
 
     console.log(`[WS Robot] Online: ${device.name} (${device.id})`);
 
+    let lastMetricsLog = 0;
+
     ws.on("message", (data, isBinary) => {
       if (isBinary) return; 
 
@@ -108,14 +110,26 @@ robotWss.on("connection", async (ws, req) => {
             event: "telemetry:new",
             data: newReading,
           });
+
+          // Log real-time metrics once every ~60 seconds to avoid spamming the log
+          const now = Date.now();
+          if (now - lastMetricsLog >= 60000) {
+            lastMetricsLog = now;
+            console.log(
+              `[Telemetry] ${device.name} | Temp: ${newReading.temperature}°C | Hum: ${newReading.humidity}% | Soil: ${newReading.soilMoisture}% (Raw: ${newReading.rawAdc ?? "N/A"}) | Light: ${newReading.light} | Buffer: ${telemetryBuffer.length}`
+            );
+          }
         }
       } catch (err) {
         console.error("[WS Telemetry Parse Error]:", err.message);
       }
     });
 
-    ws.on("close", async () => {
+    ws.on("close", async (code, reason) => {
       robotClients.delete(device.id);
+      const reasonStr = reason ? reason.toString() : "No reason provided";
+      console.log(`[WS Robot] Disconnected: ${device.name} (${device.id}) [Code: ${code}, Reason: ${reasonStr}]`);
+
       try {
         await prisma.device.update({
           where: { id: device.id },
@@ -127,7 +141,6 @@ robotWss.on("connection", async (ws, req) => {
           deviceId: device.id,
           status: "OFFLINE",
         });
-        console.log(`[WS Robot] Disconnected: ${device.id}`);
       } catch (err) {
         console.error("[WS Disconnect Error]:", err.message);
       }

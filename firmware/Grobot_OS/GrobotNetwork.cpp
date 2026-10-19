@@ -208,7 +208,7 @@ void networkTask(void *pvParameters)
     Serial.println("[Network Task] Running WebSockets on Core 0");
 
     activeServerHost = getSavedBrokerHost();
-    Serial.printf("[WS] Target Server: %s:%d\n", activeServerHost.c_str(), SERVER_PORT);
+    Serial.printf("[WS] Target Server: %s\n", activeServerHost.c_str());
 
     for (;;)
     {
