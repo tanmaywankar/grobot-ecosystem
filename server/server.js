@@ -71,10 +71,7 @@ robotWss.on("connection", async (ws, req) => {
     }
 
     ws.deviceId = device.id;
-    ws.isAlive = true;
-    ws.on("pong", () => {
-      ws.isAlive = true;
-    });
+    ws.lastSeen = Date.now();
 
     //adds the device in in our roboclients list
     robotClients.set(device.id, ws);
@@ -96,6 +93,8 @@ robotWss.on("connection", async (ws, req) => {
 
     ws.on("message", (data, isBinary) => {
       if (isBinary) return; 
+
+      ws.lastSeen = Date.now();
 
       try {
         const raw = JSON.parse(data.toString());
@@ -180,18 +179,17 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// Heartbeat: Check every 15s if connected robots are still alive
+// Check every 10s if connected robots have sent telemetry recently
+// (ESP32 sends every 5s; if silent for >20s, the socket is dead)
 const heartbeatInterval = setInterval(() => {
+  const now = Date.now();
   for (const [deviceId, ws] of robotClients.entries()) {
-    if (ws.isAlive === false) {
-      console.log(`[WS Heartbeat] Robot ${deviceId} unresponsive (missed pong), terminating socket.`);
+    if (now - (ws.lastSeen || 0) > 20000) {
+      console.log(`[WS Inactivity] Robot ${deviceId} quiet for >20s (missed telemetry), terminating dead socket.`);
       ws.terminate();
-    } else {
-      ws.isAlive = false;
-      ws.ping();
     }
   }
-}, 15000);
+}, 10000);
 
 // Graceful Shutdown (SIGINT = Ctrl+C locally, SIGTERM = Render/cloud stopping the process)
 async function gracefulShutdown(signal) {
