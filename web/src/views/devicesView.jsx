@@ -7,13 +7,6 @@ const DEVICES = [
   { id: "grobot-03", name: "Grobotino", mood: "Thriving", status: "online" },
   { id: "grobot-04", name: "Grobotos", mood: "Thirsty", status: "online" },
   { id: "grobot-05", name: "Grobotnik", mood: "Overwatered", status: "offline" },
-  { id: "grobot-06", name: "Grobotchka", mood: "Sunbathing", status: "online" },
-  { id: "grobot-07", name: "Grobotzilla", mood: "Rootbound", status: "online" },
-  { id: "grobot-08", name: "Grobotello", mood: "Chilly", status: "offline" },
-  { id: "grobot-09", name: "Grobotron", mood: "Sprouting", status: "online" },
-  { id: "grobot-10", name: "Grobotero", mood: "Sleeping", status: "offline" },
-  { id: "grobot-11", name: "Grobotkin", mood: "Blossoming", status: "online" },
-  { id: "grobot-12", name: "Grobotix", mood: "Happy", status: "online" },
 ];
 
 export default function DevicesView() {

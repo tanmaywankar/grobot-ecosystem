@@ -123,7 +123,7 @@ html += "<form action='/save' method='POST'>";
   html += "<input type='text' id='ssid' name='ssid' placeholder='Network Name (SSID)' required autocomplete='off'>";
   html += "<input type='password' id='password' name='password' placeholder='Password (if secured)'>";
   html += "<div class='list-label'>Backend Server Host / IP</div>";
-  html += "<input type='text' id='broker' name='broker' value='" + lastBroker + "' placeholder='e.g. 192.168.1.100' required autocomplete='off'>";
+  html += "<input type='text' id='broker' name='broker' value='" + lastBroker + "' placeholder='e.g. grobot-server.onrender.com or 192.168.1.100' required autocomplete='off'>";
   html += "<button type='submit'>Save & Connect</button>";
   html += "</form>";
   html += "</div>";
@@ -147,6 +147,7 @@ static void handleSave() {
     String newSSID = server.arg("ssid");
     String newPass = server.arg("password");
     String newBroker = server.hasArg("broker") ? server.arg("broker") : String(SECRET_BROKER_IP);
+    newBroker.trim();
 
     prefs.begin("grobot_wifi", false);
     prefs.putString("ssid", newSSID);

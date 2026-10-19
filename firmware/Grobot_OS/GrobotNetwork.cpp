@@ -10,7 +10,6 @@
 static WebSocketsClient webSocket;
 
 // Server details
-static const uint16_t SERVER_PORT = 8080;
 static const char *WS_PATH = "/ws/robot";
 static const char *API_KEY = SECRET_API_KEY;
 
@@ -26,6 +25,73 @@ bool isWebSocketConnected()
     return wsConnected;
 }
 
+static void parseServerEndpoint(const String &raw, String &outHost, uint16_t &outPort, bool &outIsSSL)
+{
+    String host = raw;
+    host.trim();
+
+    outIsSSL = false;
+    outPort = 8080;
+
+    // 1. Strip protocol prefixes if present
+    if (host.startsWith("https://"))
+    {
+        host = host.substring(8);
+        outIsSSL = true;
+        outPort = 443;
+    }
+    else if (host.startsWith("wss://"))
+    {
+        host = host.substring(6);
+        outIsSSL = true;
+        outPort = 443;
+    }
+    else if (host.startsWith("http://"))
+    {
+        host = host.substring(7);
+        outIsSSL = false;
+        outPort = 8080;
+    }
+    else if (host.startsWith("ws://"))
+    {
+        host = host.substring(5);
+        outIsSSL = false;
+        outPort = 8080;
+    }
+
+    // Remove any trailing slashes or path
+    int slashIdx = host.indexOf('/');
+    if (slashIdx != -1)
+    {
+        host = host.substring(0, slashIdx);
+    }
+
+    // 2. Check for port in host:port
+    int colonIdx = host.indexOf(':');
+    if (colonIdx != -1)
+    {
+        String portStr = host.substring(colonIdx + 1);
+        host = host.substring(0, colonIdx);
+        int parsedPort = portStr.toInt();
+        if (parsedPort > 0 && parsedPort <= 65535)
+        {
+            outPort = (uint16_t)parsedPort;
+            if (outPort == 443)
+            {
+                outIsSSL = true;
+            }
+        }
+    }
+    else if (host.endsWith(".onrender.com"))
+    {
+        // Render cloud services require WSS on port 443
+        outIsSSL = true;
+        outPort = 443;
+    }
+
+    outHost = host;
+}
+
 static void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
 {
     switch (type)
@@ -37,7 +103,7 @@ static void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
 
     case WStype_CONNECTED:
         wsConnected = true;
-        Serial.printf("[WS] Connected to ws://%s:%d%s\n", activeServerHost.c_str(), SERVER_PORT, WS_PATH);
+        Serial.printf("[WS] Connected to %s\n", WS_PATH);
         break;
 
     case WStype_TEXT:
@@ -63,10 +129,12 @@ static void checkWebSocket()
     {
         lastWsReconnect = now;
 
-        // activeServerHost is read once at task startup and never changes
-        // without a reboot (credentials can only change via the captive portal
-        // which calls ESP.restart()), so no NVS read is needed here.
-        Serial.printf("[WS] Connecting to %s:%d%s...\n", activeServerHost.c_str(), SERVER_PORT, WS_PATH);
+        String cleanHost;
+        uint16_t port = 8080;
+        bool useSSL = false;
+        parseServerEndpoint(activeServerHost, cleanHost, port, useSSL);
+
+        Serial.printf("[WS] Connecting to %s://%s:%d%s...\n", useSSL ? "wss" : "ws", cleanHost.c_str(), port, WS_PATH);
 
         String mac = WiFi.macAddress();
         String clientId = "Grobot-" + mac.substring(mac.length() - 8);
@@ -79,7 +147,14 @@ static void checkWebSocket()
         webSocket.setExtraHeaders(extraHeaders.c_str());
         webSocket.setReconnectInterval(5000);
 
-        webSocket.begin(activeServerHost.c_str(), SERVER_PORT, WS_PATH);
+        if (useSSL)
+        {
+            webSocket.beginSSL(cleanHost.c_str(), port, WS_PATH);
+        }
+        else
+        {
+            webSocket.begin(cleanHost.c_str(), port, WS_PATH);
+        }
     }
 }
 

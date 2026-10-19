@@ -187,11 +187,6 @@ const commandPacket = {
   timestamp: new Date().toISOString(),
 };
 
-const io = req.app.get("io");
-if (io) {
-  io.to(`device:${device.id}`).emit("command:execute", commandPacket);
-}
-
 // Forward command directly to the connected ESP32 WebSocket
 const robotClients = req.app.get("robotClients");
 if (robotClients && robotClients.has(device.id)) {

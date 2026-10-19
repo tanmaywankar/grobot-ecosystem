@@ -44,7 +44,7 @@ void setup()
   xTaskCreatePinnedToCore(
       networkTask,
       "NetworkTask",
-      4096,
+      8192,
       nullptr,
       1,
       nullptr,

@@ -157,12 +157,15 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/devices", deviceRoutes);
 app.use("/api/v1/telemetry", telemetryRouter);
 
-// Graceful Shutdown
-process.on("SIGINT", async () => {
-  console.log("Shutting down... Flushing buffer to database.");
+// Graceful Shutdown (SIGINT = Ctrl+C locally, SIGTERM = Render/cloud stopping the process)
+async function gracefulShutdown(signal) {
+  console.log(`${signal} received. Shutting down... Flushing buffer to database.`);
   await sendBufferToDB();
   process.exit(0);
-});
+}
+
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 
 server.listen(PORT, () => {
   console.log(`HTTP and native WebSockets running on port: ${PORT}`);
