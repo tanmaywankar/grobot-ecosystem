@@ -119,43 +119,39 @@ static void webSocketEvent(WStype_t type, uint8_t *payload, size_t length)
     }
 }
 
-static void checkWebSocket()
+static bool wsConfigured = false;
+
+static void initWebSocket()
 {
-    if (!isWiFiConnected() || wsConnected)
+    if (wsConfigured || !isWiFiConnected())
         return;
 
-    uint32_t now = millis();
-    if (now - lastWsReconnect >= 5000)
+    String cleanHost;
+    uint16_t port = 8080;
+    bool useSSL = false;
+    parseServerEndpoint(activeServerHost, cleanHost, port, useSSL);
+
+    Serial.printf("[WS] Initializing %s://%s:%d%s\n", useSSL ? "wss" : "ws", cleanHost.c_str(), port, WS_PATH);
+
+    String mac = WiFi.macAddress();
+    String clientId = "Grobot-" + mac.substring(mac.length() - 8);
+    clientId.replace(":", "");
+
+    String extraHeaders = "x-api-key: " + String(API_KEY) + "\r\nx-device-id: " + clientId;
+    webSocket.onEvent(webSocketEvent);
+    webSocket.setExtraHeaders(extraHeaders.c_str());
+    webSocket.setReconnectInterval(5000);
+
+    if (useSSL)
     {
-        lastWsReconnect = now;
-
-        String cleanHost;
-        uint16_t port = 8080;
-        bool useSSL = false;
-        parseServerEndpoint(activeServerHost, cleanHost, port, useSSL);
-
-        Serial.printf("[WS] Connecting to %s://%s:%d%s...\n", useSSL ? "wss" : "ws", cleanHost.c_str(), port, WS_PATH);
-
-        String mac = WiFi.macAddress();
-        String clientId = "Grobot-" + mac.substring(mac.length() - 8);
-        clientId.replace(":", "");
-
-        // Configure event handler and headers BEFORE begin() so they are
-        // guaranteed to be in place before the handshake is initiated.
-        String extraHeaders = "x-api-key: " + String(API_KEY) + "\r\nx-device-id: " + clientId;
-        webSocket.onEvent(webSocketEvent);
-        webSocket.setExtraHeaders(extraHeaders.c_str());
-        webSocket.setReconnectInterval(5000);
-
-        if (useSSL)
-        {
-            webSocket.beginSSL(cleanHost.c_str(), port, WS_PATH);
-        }
-        else
-        {
-            webSocket.begin(cleanHost.c_str(), port, WS_PATH);
-        }
+        webSocket.beginSSL(cleanHost.c_str(), port, WS_PATH);
     }
+    else
+    {
+        webSocket.begin(cleanHost.c_str(), port, WS_PATH);
+    }
+
+    wsConfigured = true;
 }
 
 static void sendTelemetry()
@@ -214,12 +210,21 @@ void networkTask(void *pvParameters)
     {
         if (isWiFiConnected())
         {
-            checkWebSocket();
+            initWebSocket();
             webSocket.loop();
 
             if (wsConnected)
             {
                 sendTelemetry();
+            }
+        }
+        else
+        {
+            if (wsConfigured)
+            {
+                webSocket.disconnect();
+                wsConfigured = false;
+                wsConnected = false;
             }
         }
 

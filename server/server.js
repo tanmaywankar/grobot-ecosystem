@@ -71,6 +71,11 @@ robotWss.on("connection", async (ws, req) => {
     }
 
     ws.deviceId = device.id;
+    ws.isAlive = true;
+    ws.on("pong", () => {
+      ws.isAlive = true;
+    });
+
     //adds the device in in our roboclients list
     robotClients.set(device.id, ws);
 
@@ -170,9 +175,28 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/devices", deviceRoutes);
 app.use("/api/v1/telemetry", telemetryRouter);
 
+// Lightweight health check route for uptime monitors (UptimeRobot, cron jobs)
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// Heartbeat: Check every 15s if connected robots are still alive
+const heartbeatInterval = setInterval(() => {
+  for (const [deviceId, ws] of robotClients.entries()) {
+    if (ws.isAlive === false) {
+      console.log(`[WS Heartbeat] Robot ${deviceId} unresponsive (missed pong), terminating socket.`);
+      ws.terminate();
+    } else {
+      ws.isAlive = false;
+      ws.ping();
+    }
+  }
+}, 15000);
+
 // Graceful Shutdown (SIGINT = Ctrl+C locally, SIGTERM = Render/cloud stopping the process)
 async function gracefulShutdown(signal) {
   console.log(`${signal} received. Shutting down... Flushing buffer to database.`);
+  clearInterval(heartbeatInterval);
   await sendBufferToDB();
   process.exit(0);
 }
