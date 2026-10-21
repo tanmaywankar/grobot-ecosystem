@@ -19,7 +19,7 @@ export default function RadialGaugeCard({
       <div className="relative flex flex-col items-center justify-center pt-1 pb-0">
         <svg
           viewBox="0 0 200 115"
-          className="w-full max-w-[215px] overflow-visible"
+          className="w-full max-w-[215px] overflow-visible -translate-y-4"
         >
           {/* Background Track */}
           <path
@@ -45,7 +45,7 @@ export default function RadialGaugeCard({
 
         {/* Centered Metric & Subtitle */}
         <div className="absolute inset-x-0 bottom-2.5 flex flex-col items-center justify-center text-center">
-          <span className="text-3xl md:text-4xl font-medium text-text-main tracking-tight leading-none">
+          <span className="text-3xl md:text-4xl font-regular text-text-main tracking-tight leading-none">
             {value} {unit}
           </span>
           <span className="text-base md:text-lg font-light text-text-muted mt-1.5 leading-none">

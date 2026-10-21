@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { Bell, ChevronDown } from "lucide-react";
+import { ChevronDown, ArrowLeft, Bell } from "lucide-react";
 import RobotSelector from "./dashboard/RobotSelector.jsx";
 import {
   INITIAL_DEVICES,
@@ -34,12 +34,7 @@ export default function TopNavbar({ logoUrl, placeholder }) {
   const closeMenu = () => setActiveMenu(null);
 
   const handleNotificationsClick = () => {
-    if (window.innerWidth < 768) {
-      closeMenu();
-      navigate("/notifications");
-    } else {
-      toggleMenu("notifications");
-    }
+    toggleMenu("notifications");
   };
 
   const handleProfileClick = () => {
@@ -49,6 +44,11 @@ export default function TopNavbar({ logoUrl, placeholder }) {
     } else {
       toggleMenu("profile");
     }
+  };
+
+  const handleBackToDevices = () => {
+    closeMenu();
+    navigate("/devices");
   };
 
   return (
@@ -61,14 +61,49 @@ export default function TopNavbar({ logoUrl, placeholder }) {
         />
       )}
 
-      {/* Grobot Logo */}
-      <Link to="/" onClick={closeMenu} className="cursor-pointer shrink-0 z-10">
-        <img
-          src={logoUrl}
-          className="h-14 md:h-20 w-auto opacity-80 md:opacity-50 object-contain md:object-cover hover:opacity-95 transition-opacity"
-          alt="Grobot logo"
-        />
-      </Link>
+      {/* Left Slot: Mobile Back Button on /dashboard, otherwise Grobot Logo */}
+      <div className="flex items-center shrink-0 z-10">
+        {isDashboard ? (
+          <>
+            {/* Accessible Mobile Back Arrow (< md) */}
+            <button
+              type="button"
+              onClick={handleBackToDevices}
+              aria-label="Back to devices list"
+              className="md:hidden size-11.5 flex items-center justify-center bg-card hover:bg-track active:scale-95 text-text-main rounded-full cursor-pointer transition-all duration-200 focus-visible:ring-2 focus-visible:ring-mint focus-visible:outline-none shadow-xs"
+            >
+              <ArrowLeft className="size-6 stroke-2" />
+            </button>
+
+            {/* Desktop Grobot Logo (md+) */}
+            <Link
+              to="/"
+              onClick={closeMenu}
+              aria-label="Grobot Home"
+              className="hidden md:block cursor-pointer focus-visible:ring-2 focus-visible:ring-mint focus-visible:outline-none rounded-xl"
+            >
+              <img
+                src={logoUrl}
+                className="h-20 w-auto opacity-50 object-cover hover:opacity-95 transition-opacity"
+                alt="Grobot logo"
+              />
+            </Link>
+          </>
+        ) : (
+          <Link
+            to="/"
+            onClick={closeMenu}
+            aria-label="Grobot Home"
+            className="cursor-pointer focus-visible:ring-2 focus-visible:ring-mint focus-visible:outline-none rounded-xl"
+          >
+            <img
+              src={logoUrl}
+              className="h-14 md:h-20 w-auto opacity-80 md:opacity-50 object-contain md:object-cover hover:opacity-95 transition-opacity"
+              alt="Grobot logo"
+            />
+          </Link>
+        )}
+      </div>
 
       {/* Robot Selector in Top Heading when on /dashboard */}
       {isDashboard && (
@@ -84,19 +119,19 @@ export default function TopNavbar({ logoUrl, placeholder }) {
       {/* Right Controls */}
       <div className="mr-0 md:mr-5 flex flex-row items-center gap-3 md:gap-5 shrink-0 z-10">
         
-        {/* Notifications */}
-        <div className="relative">
+        {/* Notifications (Desktop & Tablet only - hidden on mobile) */}
+        <div className="relative hidden md:block">
           <button
             type="button"
             onClick={handleNotificationsClick}
             aria-label="Notifications"
-            className="size-11.5 md:size-14 flex items-center justify-center hover:bg-track bg-card rounded-full cursor-pointer transition-colors"
+            className="size-11.5 md:size-14 flex items-center justify-center hover:bg-track bg-card rounded-full cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-mint focus-visible:outline-none"
           >
             <Bell className="size-6 md:size-7 stroke-[2.25] md:stroke-[1.5]" strokeWidth={1.5} />
           </button>
 
           {activeMenu === "notifications" && (
-            <div className="hidden md:flex absolute right-0 top-15 md:top-16 w-72 md:w-80 max-w-[calc(100vw-2rem)] bg-card rounded-2xl p-4 shadow-2xl z-50 flex-col gap-3">
+            <div className="hidden md:flex absolute right-0 top-15 md:top-16 w-72 md:w-80 max-w-[calc(100vw-2rem)] bg-card rounded-2xl p-4 shadow-2xl z-50 flex-col gap-3 border border-placeholder/20">
               <div className="flex items-center justify-between pb-2">
                 <Link
                   to="/notifications"
@@ -129,7 +164,7 @@ export default function TopNavbar({ logoUrl, placeholder }) {
             type="button"
             onClick={handleProfileClick}
             aria-label="User profile"
-            className="p-0.5 md:p-1 bg-card hover:bg-track rounded-full items-center flex flex-row cursor-pointer transition-colors"
+            className="p-0.5 md:p-1 bg-card hover:bg-track rounded-full items-center flex flex-row cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-mint focus-visible:outline-none"
           >
             <img
               src={placeholder}
@@ -145,7 +180,7 @@ export default function TopNavbar({ logoUrl, placeholder }) {
           </button>
 
           {activeMenu === "profile" && (
-            <div className="hidden md:flex absolute right-0 top-15 md:top-16 w-52 md:w-60 bg-card rounded-2xl p-3 shadow-2xl z-50 flex-col gap-1">
+            <div className="hidden md:flex absolute right-0 top-15 md:top-16 w-56 md:w-64 bg-card rounded-2xl p-3 shadow-2xl z-50 flex-col gap-1 border border-placeholder/20">
               <Link
                 to="/profile"
                 onClick={closeMenu}
@@ -156,6 +191,17 @@ export default function TopNavbar({ logoUrl, placeholder }) {
               </Link>
 
               <div className="h-0.5 bg-track rounded-full my-1" />
+
+              <Link
+                to="/notifications"
+                onClick={closeMenu}
+                className="w-full flex items-center justify-between px-3 py-2 text-sm text-text-muted hover:text-text-main hover:bg-track rounded-xl transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-2.5">
+                  <Bell size={16} strokeWidth={1.75} />
+                  <span>Notifications</span>
+                </div>
+              </Link>
 
               <Link
                 to="/profile"
@@ -184,7 +230,6 @@ export default function TopNavbar({ logoUrl, placeholder }) {
             </div>
           )}
         </div>
-
       </div>
     </div>
   );

@@ -8,16 +8,16 @@ export default function OverallConditionCard({
   className = "",
 }) {
   const radius = 24;
-  const strokeWidth = 5;
+  const strokeWidth = 6;
   const circumference = 2 * Math.PI * radius; // ~150.8
   const clampedScore = Math.min(Math.max(score, 0), 100);
   const strokeDashoffset = circumference * (1 - clampedScore / 100);
 
   return (
-    <DashboardCard title={title} className={`h-[140px] ${className}`}>
+    <DashboardCard title={title} className={`h-35 ${className}`}>
       <div className="flex items-center gap-5 py-1">
         {/* Circular Health Ring with HeartPlus Icon */}
-        <div className="relative size-16 shrink-0 flex items-center justify-center">
+        <div className="relative size-18 shrink-0 flex items-center justify-center">
           <svg className="size-full -rotate-90 overflow-visible" viewBox="0 0 60 60">
             {/* Background Circle */}
             <circle
@@ -45,16 +45,16 @@ export default function OverallConditionCard({
 
           {/* Centered HeartPlus Icon */}
           <div className="absolute inset-0 flex items-center justify-center text-text-main">
-            <HeartPlus size={22} strokeWidth={2} />
+            <HeartPlus size={32} strokeWidth={2} />
           </div>
         </div>
 
         {/* Verdict & Subtitle */}
         <div className="flex flex-col">
-          <h4 className="text-2xl md:text-3xl font-medium text-text-main tracking-tight leading-none">
+          <h4 className="text-2xl md:text-3xl font-regular text-text-main tracking-tight leading-none">
             {status}
           </h4>
-          <span className="text-base md:text-lg font-light text-text-muted mt-2 leading-none">
+          <span className="text-base md:text-md font-light text-text-muted my-2 leading-none">
             {score}% Health Score
           </span>
         </div>

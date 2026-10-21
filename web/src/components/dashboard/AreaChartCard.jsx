@@ -26,11 +26,12 @@ export default function AreaChartCard({
 
   return (
     <DashboardCard title={title} className={`h-[280px] ${className}`}>
-      <div className="w-full h-56 pt-2">
+      <div className="w-full h-56 pt-2 select-none outline-none focus:outline-none focus-within:outline-none [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_*:focus]:outline-none">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={chartData}
             margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+            accessibilityLayer={false}
           >
             <defs>
               <linearGradient id="mintAreaGradient" x1="0" y1="0" x2="0" y2="1">

@@ -36,14 +36,9 @@ export default function RobotSelector({
         onClick={() => setIsOpen((prev) => !prev)}
         aria-expanded={isOpen}
         aria-label="Select Robot"
-        className="flex items-center gap-2 md:gap-2.5 px-3 py-1.5 -mx-3 -my-1.5 rounded-2xl hover:bg-card/60 transition-colors cursor-pointer outline-none select-none group"
+        className="flex items-center gap-2 md:gap-2.5 px-4 py-2 -mx-3 -my-1.5 rounded-full hover:bg-card/60 transition-colors cursor-pointer outline-none select-none group"
       >
-        {/* Plain status circle (no glow/shadow) */}
-        <span
-          className={`size-2.5 md:size-3 rounded-full shrink-0 ${
-            isOnline ? "bg-mint" : "bg-placeholder"
-          }`}
-        />
+
 
         {/* Robot Name (OG Size: 2xl / 3xl) */}
         <span className="text-2xl md:text-3xl font-medium text-text-main tracking-tight truncate max-w-[150px] sm:max-w-[220px] md:max-w-none">
