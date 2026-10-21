@@ -22,9 +22,8 @@ export default function DeviceCard({
       onClick={onClick}
       onKeyDown={handleKeyDown}
       aria-label={`${name}, status: ${status}, mood: ${mood}`}
-      /* Changed `px-6 py-3` to `px-6 pt-4 pb-0` so the bottom edge is completely flush */
-      className={`relative w-full max-w-[380px] aspect-[17/11] rounded-3xl px-6 pt-4 pb-0 flex flex-col justify-between overflow-hidden shadow-xl cursor-pointer transition-all duration-300 group outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-mint ${
-        !isOnline ? "grayscale border border-slate-800" : ""
+      className={`relative w-full max-w-95 aspect-17/11 rounded-3xl px-6 pt-4 pb-0 flex flex-col justify-between overflow-hidden shadow-xl cursor-pointer transition-all duration-300 group outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-mint ${
+        !isOnline ? "grayscale border border-slate-800" : "border border-mist-800"
       }`}
     >
       <div

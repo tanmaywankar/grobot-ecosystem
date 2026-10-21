@@ -1,10 +1,31 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Bell, ChevronDown } from "lucide-react";
+import RobotSelector from "./dashboard/RobotSelector.jsx";
+import {
+  INITIAL_DEVICES,
+  getActiveDeviceId,
+  setActiveDeviceId,
+} from "../data/devices.js";
 
 export default function TopNavbar({ logoUrl, placeholder }) {
   const [activeMenu, setActiveMenu] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const isDashboard = location.pathname.startsWith("/dashboard");
+
+  const urlId = searchParams.get("id");
+  const selectedDeviceId =
+    urlId && INITIAL_DEVICES.some((d) => d.id === urlId)
+      ? urlId
+      : getActiveDeviceId();
+
+  const handleSelectDevice = (newId) => {
+    setActiveDeviceId(newId);
+    setSearchParams({ id: newId });
+  };
 
   const toggleMenu = (menuName) => {
     setActiveMenu((prev) => (prev === menuName ? null : menuName));
@@ -41,7 +62,7 @@ export default function TopNavbar({ logoUrl, placeholder }) {
       )}
 
       {/* Grobot Logo */}
-      <Link to="/" onClick={closeMenu} className="cursor-pointer">
+      <Link to="/" onClick={closeMenu} className="cursor-pointer shrink-0 z-10">
         <img
           src={logoUrl}
           className="h-14 md:h-20 w-auto opacity-80 md:opacity-50 object-contain md:object-cover hover:opacity-95 transition-opacity"
@@ -49,8 +70,19 @@ export default function TopNavbar({ logoUrl, placeholder }) {
         />
       </Link>
 
+      {/* Robot Selector in Top Heading when on /dashboard */}
+      {isDashboard && (
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center z-30">
+          <RobotSelector
+            devices={INITIAL_DEVICES}
+            selectedDeviceId={selectedDeviceId}
+            onSelectDevice={handleSelectDevice}
+          />
+        </div>
+      )}
+
       {/* Right Controls */}
-      <div className="mr-0 md:mr-5 flex flex-row items-center gap-3 md:gap-5">
+      <div className="mr-0 md:mr-5 flex flex-row items-center gap-3 md:gap-5 shrink-0 z-10">
         
         {/* Notifications */}
         <div className="relative">

@@ -1,15 +1,16 @@
+import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import DeviceCard from "../components/deviceCard.jsx";
-
-const DEVICES = [
-  { id: "grobot-01", name: "Grobotaro", mood: "Happy", status: "online" },
-  { id: "grobot-02", name: "Grobottov", mood: "Needs Care", status: "offline" },
-  { id: "grobot-03", name: "Grobotino", mood: "Thriving", status: "online" },
-  { id: "grobot-04", name: "Grobotos", mood: "Thirsty", status: "online" },
-  { id: "grobot-05", name: "Grobotnik", mood: "Overwatered", status: "offline" },
-];
+import { INITIAL_DEVICES, setActiveDeviceId } from "../data/devices.js";
 
 export default function DevicesView() {
+  const navigate = useNavigate();
+
+  const handleDeviceClick = (device) => {
+    setActiveDeviceId(device.id);
+    navigate(`/dashboard?id=${device.id}`);
+  };
+
   const handleAddDevice = () => {
     console.log("Add device clicked");
   };
@@ -21,13 +22,13 @@ export default function DevicesView() {
       </h1>
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6 items-start justify-items-center">
-        {DEVICES.map((device) => (
+        {INITIAL_DEVICES.map((device) => (
           <DeviceCard
             key={device.id}
             name={device.name}
             mood={device.mood}
             status={device.status}
-            onClick={() => console.log(`Selected ${device.name}`)}
+            onClick={() => handleDeviceClick(device)}
           />
         ))}
 
