@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "./auth.js";
 import authRoutes from "./routes/auth.js";
 import deviceRoutes from "./routes/device.js";
 import telemetryRouter, { sendBufferToDB, telemetryBuffer } from "./routes/telemetry.js";
@@ -184,7 +186,17 @@ dashboardWss.on("connection", (ws) => {
 });
 
 // REST Middleware & Routes
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow local development and production frontends with credentials
+    callback(null, true);
+  },
+  credentials: true,
+}));
+
+// Mount Better Auth handler (must be mounted before express.json body parser)
+app.all("/api/auth/*splat", toNodeHandler(auth));
+
 app.use(express.json());
 
 app.use("/api/v1/auth", authRoutes);

@@ -6,11 +6,18 @@ import SettingsView from "./views/settingsView.jsx";
 import SupportView from "./views/supportView.jsx";
 import NotificationsView from "./views/notificationsView.jsx";
 import ProfileView from "./views/profileView.jsx";
+import LoginView from "./views/loginView.jsx";
+import SignupView from "./views/signupView.jsx";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Full-screen Auth Pages (without dashboard navbars) */}
+        <Route path="/login" element={<LoginView />} />
+        <Route path="/signup" element={<SignupView />} />
+
+        {/* Protected Dashboard & App Pages (with RootLayout navbars) */}
         <Route path="/" element={<RootLayout />}>
           <Route index element={<Navigate to="/devices" replace />} />
           <Route path="devices" element={<DevicesView />} />

@@ -12,8 +12,6 @@ export default function RobotSelector({
   const currentDevice =
     devices.find((d) => d.id === selectedDeviceId) || devices[0];
 
-  const isOnline = currentDevice?.status === "online";
-
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -41,7 +39,7 @@ export default function RobotSelector({
 
 
         {/* Robot Name (OG Size: 2xl / 3xl) */}
-        <span className="text-2xl md:text-3xl font-medium text-text-main tracking-tight truncate max-w-[150px] sm:max-w-[220px] md:max-w-none">
+        <span className="text-2xl md:text-3xl font-medium text-text-main tracking-tight truncate max-w-37.5 sm:max-w-55 md:max-w-none">
           {currentDevice?.name || "Select Robot"}
         </span>
 
